@@ -1,22 +1,17 @@
-import LeftSidebar from "./components/LeftSidebar/LeftSidebar";
-import RightSidebar from "./components/RightSidebar/RightSidebar";
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import "./App.css";
 import Home from './pages/Home';
+import Resume from './pages/Resume';
 
 function App() {
-    return (
-      <Home />
-    // <>
-    //   <LeftSidebar />
-    //   <RightSidebar />
-
-    //   <main className="main-content">
-    //     <div className="center-wrapper">
-    //       <div className="resume-canvas" />
-    //     </div>
-    //   </main>
-    // </>
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/resume" element={<Resume />} />
+      </Routes>
+    </Router>
   );
 }
 
-export default App
+export default App;

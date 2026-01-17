@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './Home.css';
 
 function Home() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('Applied');
   const [jobs, setJobs] = useState([
     {
@@ -56,13 +58,20 @@ function Home() {
 
   const filteredJobs = jobs.filter(job => job.status === activeTab);
 
+  const handleResumeClick = () => {
+    console.log('Resume button clicked'); // Debug log
+    navigate('/resume');
+  };
+
   return (
     <div className="home-container">
       <header className="header">
         <div className="nav-buttons">
           {/* Navigation buttons removed */}
         </div>
-        <button className="resume-button">Resume</button>
+        <button className="resume-button" onClick={handleResumeClick}>
+          Resume
+        </button>
       </header>
 
       <main className="main-content">
