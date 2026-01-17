@@ -6,7 +6,7 @@ export default function RightSidebar() {
   const [collapsed, setCollapsed] = useState(false);
 
   return (
-    <aside className={`sidebar ${collapsed ? "collapsed" : ""}`}>
+    <aside className={`right-sidebar ${collapsed ? "collapsed" : ""}`}>
       <div className="sidebar-header">
         <button
           className="collapse-btn"
@@ -14,6 +14,7 @@ export default function RightSidebar() {
         >
           {collapsed ? "←" : "→"}
         </button>
+
         {!collapsed && <h2>Library</h2>}
       </div>
 
@@ -31,7 +32,6 @@ function Section({ title }) {
   return (
     <div className="sidebar-section">
       <h3>{title}</h3>
-
       <div className="thumbnail" />
       <div className="thumbnail" />
     </div>
