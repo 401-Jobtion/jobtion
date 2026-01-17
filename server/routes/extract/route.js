@@ -5,6 +5,7 @@ import * as cheerio from 'cheerio';
 const router = express.Router();
 
 router.post('/', async (req, res) => {
+   console.log('Extract route hit!', req.body);
   try {
     const { url } = req.body;
 

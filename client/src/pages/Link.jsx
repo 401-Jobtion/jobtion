@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { getJobs, addJob, updateJob, deleteJob, getStoredResume } from '../lib/storage';
 import JobCard from '../components/JobCard';
-import JobForm from '../components./components/JobForm';
-import JobList from '../components./components/JobList';
-import ResumeUpload from '../components./components/ResumeUpload';
+import JobForm from '../components/JobForm';
+import JobList from '../components/JobList';
+import ResumeUpload from '../components/ResumeUpload';
 
 export default function Link() {
   const [jobs, setJobs] = useState([]);

@@ -10,7 +10,7 @@ import parseResumeRouter from './routes/parse-resume/route.js';
 import tailorResumeRouter from './routes/tailor-resume/route.js';
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
 // Middleware
 app.use(cors());
