@@ -4,10 +4,6 @@ import * as cheerio from 'cheerio';
 
 const router = express.Router();
 
-const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY,
-});
-
 router.post('/', async (req, res) => {
   try {
     const { url } = req.body;
@@ -19,6 +15,10 @@ router.post('/', async (req, res) => {
     if (!process.env.GROQ_API_KEY) {
       return res.status(500).json({ error: 'GROQ_API_KEY not configured' });
     }
+
+    const groq = new Groq({
+      apiKey: process.env.GROQ_API_KEY,
+    });
 
     // Scrape the URL
     const response = await fetch(url, {
@@ -34,7 +34,6 @@ router.post('/', async (req, res) => {
     const html = await response.text();
     const $ = cheerio.load(html);
 
-    // Remove non-content elements
     $('script, style, nav, footer, header, aside, iframe, noscript').remove();
 
     const text = $('body').text()
@@ -42,7 +41,6 @@ router.post('/', async (req, res) => {
       .trim()
       .substring(0, 15000);
 
-    // Extract with Groq
     const prompt = `Extract job posting details from the following text. Return a JSON object with these fields:
 - title: job title
 - company: company name

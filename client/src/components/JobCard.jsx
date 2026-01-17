@@ -151,7 +151,7 @@ export default function JobCard({ job, onEdit, onDelete, onStatusChange, hasResu
           Added {formatDate(job.createdAt)}
         </div>
         <div className="flex gap-2">
-          {job.url && (
+          {/* {job.url && (
             
               href={job.url}
               target="_blank"
@@ -160,7 +160,7 @@ export default function JobCard({ job, onEdit, onDelete, onStatusChange, hasResu
             >
               View Posting ↗
             </a>
-          )}
+          )} */}
           <button
             onClick={() => onEdit(job)}
             className="text-sm text-gray-600 hover:text-gray-800"

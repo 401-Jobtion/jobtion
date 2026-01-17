@@ -4,10 +4,6 @@ import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } fro
 
 const router = express.Router();
 
-const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY,
-});
-
 router.post('/', async (req, res) => {
   try {
     const { resumeText, job } = req.body;
@@ -23,6 +19,10 @@ router.post('/', async (req, res) => {
     if (!process.env.GROQ_API_KEY) {
       return res.status(500).json({ error: 'GROQ_API_KEY not configured' });
     }
+
+    const groq = new Groq({
+      apiKey: process.env.GROQ_API_KEY,
+    });
 
     // Tailor with Groq
     const prompt = `You are a professional resume writer. Tailor this resume for the job posting below.

@@ -1,5 +1,12 @@
+// In client/src/pages/Home.jsx, the imports should be:
+import { getJobs, addJob, updateJob, deleteJob, getStoredResume } from '../lib/storage';
+import JobForm from '../components/JobForm';
+import JobList from '../components/JobList';
+import ResumeUpload from '../components/ResumeUpload';
 import { useState } from 'react';
 import './Home.css';
+
+
 
 function Home() {
   const [activeTab, setActiveTab] = useState('Applied');

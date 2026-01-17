@@ -1,6 +1,9 @@
 import express from 'express';
 import multer from 'multer';
-import pdf from 'pdf-parse';
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
+const pdf = require('pdf-parse');
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });

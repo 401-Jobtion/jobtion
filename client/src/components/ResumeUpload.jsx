@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { saveResume, deleteResume } from '../lib/storage';
+import { generateId } from '../lib/storage';
 
 export default function ResumeUpload({ storedResume, onResumeChange }) {
   const [loading, setLoading] = useState(false);

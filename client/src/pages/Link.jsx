@@ -4,7 +4,7 @@ import JobForm from './JobForm';
 import JobList from './JobList';
 import ResumeUpload from './ResumeUpload';
 
-export default function Home() {
+export default function Link() {
   const [jobs, setJobs] = useState([]);
   const [editingJob, setEditingJob] = useState(null);
   const [storedResume, setStoredResume] = useState(null);
