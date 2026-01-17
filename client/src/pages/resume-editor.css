@@ -27,3 +27,63 @@
   background: white;
   box-shadow: 0 0 10px rgba(0,0,0,0.15);
 }
+
+.resume-profile {
+  padding: 24px 32px 16px;
+  text-align: center;
+}
+
+.profile-name {
+  font-size: 28px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.profile-meta {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+
+  font-size: 14px;
+  color: #444;
+}
+
+.resume-profile hr {
+  margin-top: 16px;
+  border: none;
+  border-top: 1px solid #000;
+}
+
+.resume-section {
+  padding: 0 32px 24px;
+}
+
+.resume-section-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  border-bottom: 1px solid #000;
+  padding-bottom: 4px;
+}
+
+.resume-item {
+  margin-bottom: 14px;
+}
+
+.resume-item-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+}
+
+.resume-item-role {
+  font-size: 13px;
+  font-style: italic;
+  margin-bottom: 6px;
+}
+
+.resume-item ul {
+  padding-left: 18px;
+  margin: 0;
+  font-size: 13px;
+}
