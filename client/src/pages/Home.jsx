@@ -1,8 +1,10 @@
 import { useState } from 'react';
+import { useNavigate } from "react-router-dom";
 import './home.css';
 import NewJobModal from '../components/NewJobModal';
 
 function Home() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('Applied');
   const [showNewJob, setShowNewJob] = useState(false);
 
@@ -98,11 +100,11 @@ function Home() {
                 <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
               </svg>
             </button>
-
-            {/* ✅ OPEN MODAL */}
-            <button className="new-button" onClick={() => setShowNewJob(true)}>New</button>
-
-            <button className="resume-button">Resume</button>
+            <button className="new-button">New</button>
+            <button
+              className="resume-button"
+              onClick={() => navigate("/resume")}
+            >Resume</button>
           </div>
         </div>
 
