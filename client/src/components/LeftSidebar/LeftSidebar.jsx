@@ -7,9 +7,9 @@ export default function LeftSidebar() {
 
   return (
     <aside className={`left-sidebar ${collapsed ? "collapsed" : ""}`}>
-      {/* Header */}
       <div className="sidebar-header">
         {!collapsed && <h2>Sections</h2>}
+
         <button
           className="collapse-btn"
           onClick={() => setCollapsed(!collapsed)}
