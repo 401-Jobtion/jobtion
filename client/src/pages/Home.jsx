@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import { useNavigate } from "react-router-dom";
 import './home.css';
 
 function Home() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('Applied');
   const [jobs] = useState([
     { id: 1, title: 'Google SWE', type: 'SWE', typeColor: 'red', dueDate: 'February 28, 2025', status: 'Applied' },
@@ -55,7 +57,10 @@ function Home() {
               </svg>
             </button>
             <button className="new-button">New</button>
-            <button className="resume-button">Resume</button>
+            <button
+              className="resume-button"
+              onClick={() => navigate("/resume")}
+            >Resume</button>
           </div>
         </div>
 

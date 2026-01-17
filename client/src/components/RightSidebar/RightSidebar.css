@@ -1,0 +1,33 @@
+.right-sidebar {
+  position: fixed;
+  top: 0;
+  right: 0;
+
+  width: 280px;
+  height: 100vh;
+
+  background: #2b2b2b;
+  color: #eaeaea;
+
+  display: flex;
+  flex-direction: column;
+
+  border-left: 1px solid #3a3a3a;
+  box-shadow: -4px 0 12px rgba(0, 0, 0, 0.35);
+
+  transition: width 0.25s ease;
+  z-index: 100;
+}
+
+.right-sidebar.collapsed {
+  width: 60px;
+}
+
+/* Thumbnails */
+
+.thumbnail {
+  height: 80px;
+  background: #3a3a3a;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
