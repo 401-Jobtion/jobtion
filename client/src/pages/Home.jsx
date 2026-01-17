@@ -22,13 +22,6 @@ function Home() {
 
   return (
     <div className="home-container">
-      <header className="header">
-        <div className="nav-buttons">
-          {/* Navigation buttons removed */}
-        </div>
-        <button className="resume-button">Resume</button>
-      </header>
-
       <main className="main-content">
         <h1 className="page-title">Jobs</h1>
 
