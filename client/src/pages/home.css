@@ -1,0 +1,283 @@
+/* Reset and make container full screen */
+.home-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Fixed header */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  background-color: #ffffff;
+  z-index: 10;
+}
+
+.nav-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.icon-button {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #666;
+  cursor: pointer;
+  padding: 0.5rem;
+}
+
+.icon-button:hover {
+  color: #000;
+}
+
+.resume-button {
+  background-color: #00bcd4;
+  color: white;
+  border: none;
+  padding: 0.75rem 2rem;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.resume-button:hover {
+  background-color: #00acc1;
+}
+
+/* Main content area - takes remaining space */
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 2rem 4rem 2rem 4rem;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* Fixed title - pushed to left */
+.page-title {
+  font-size: 4rem;
+  font-weight: 400;
+  margin: 0 0 2rem 0;
+  color: #000;
+  text-align: left;
+}
+
+/* Fixed tabs */
+.tabs-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.tabs {
+  display: flex;
+  gap: 2rem;
+  border-bottom: 2px solid #e0e0e0;
+  padding-bottom: 0;
+}
+
+.tab {
+  background: none;
+  border: none;
+  padding: 1rem 0.5rem;
+  font-size: 1rem;
+  color: #999;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  transition: all 0.3s;
+}
+
+.tab.active {
+  color: #000;
+  border-bottom-color: #000;
+}
+
+.tab:hover {
+  color: #000;
+}
+
+.tab-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tab-icon svg {
+  stroke: currentColor;
+}
+
+.actions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.search-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.search-button svg {
+  stroke: currentColor;
+}
+
+.new-button {
+  background-color: #00bcd4;
+  color: white;
+  border: none;
+  padding: 0.5rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.new-button:hover {
+  background-color: #00acc1;
+}
+
+/* Table container - this will scroll */
+.table-wrapper {
+  flex: 1;
+  overflow-y: auto;
+  margin-top: 1rem;
+  min-height: 0;
+}
+
+.jobs-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.jobs-table thead {
+  position: sticky;
+  top: 0;
+  background-color: #ffffff;
+  z-index: 5;
+}
+
+.jobs-table thead th {
+  text-align: left;
+  padding: 1rem;
+  font-weight: 500;
+  color: #999;
+  border-bottom: 2px solid #e0e0e0;
+  font-size: 0.95rem;
+}
+
+.job-title-header {
+  width: 40%;
+  text-align: left;
+}
+
+.type-header {
+  width: 30%;
+  text-align: left;
+}
+
+.due-date-header {
+  width: 30%;
+  text-align: right;
+}
+
+.header-icon {
+  margin-right: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+}
+
+.header-icon svg {
+  stroke: #999;
+}
+
+.jobs-table tbody tr {
+  border-bottom: 1px solid #f0f0f0;
+  transition: background-color 0.2s;
+}
+
+.jobs-table tbody tr:hover {
+  background-color: #f9f9f9;
+}
+
+.jobs-table td {
+  padding: 1.5rem 1rem;
+  font-size: 1rem;
+}
+
+.job-title {
+  color: #000;
+  font-weight: 400;
+  text-decoration: underline;
+  cursor: pointer;
+  text-align: left;
+  width: 40%;
+}
+
+.job-type {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-align: left;
+  width: 30%;
+}
+
+.type-indicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.type-indicator.red {
+  background-color: #f44336;
+}
+
+.type-indicator.green {
+  background-color: #4caf50;
+}
+
+.job-due-date {
+  color: #666;
+  text-align: right;
+  width: 30%;
+}
+
+.urgency-bar {
+  position: fixed;
+  right: 0;
+  top: 0;
+  width: 20px;
+  height: 100vh;
+  background: linear-gradient(to bottom, 
+    #4caf50 0%, 
+    #8bc34a 20%, 
+    #cddc39 40%, 
+    #ffeb3b 50%, 
+    #ffc107 60%, 
+    #ff9800 70%, 
+    #ff5722 85%, 
+    #f44336 100%
+  );
+  border-radius: 10px 0 0 10px;
+}
