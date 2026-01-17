@@ -59,10 +59,7 @@ function Home() {
   return (
     <div className="home-container">
       <header className="header">
-        <div className="nav-buttons">
-          {/* Navigation buttons removed */}
-        </div>
-        <button className="resume-button">Resume</button>
+        {/* Header now empty or can be removed */}
       </header>
 
       <main className="main-content">
@@ -113,6 +110,7 @@ function Home() {
               </svg>
             </button>
             <button className="new-button">New</button>
+            <button className="resume-button">Resume</button>
           </div>
         </div>
 
