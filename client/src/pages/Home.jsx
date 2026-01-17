@@ -70,15 +70,25 @@ function Home() {
     navigate('/resume');
   };
 
+  const handleLinkClick = () => {
+    console.log('Link button clicked'); // Debug log
+    navigate('/link');
+  };
+
   return (
     <div className="home-container">
       <header className="header">
         <div className="nav-buttons">
           {/* Navigation buttons removed */}
         </div>
-        <button className="resume-button" onClick={handleResumeClick}>
-          Resume
-        </button>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button className="resume-button" onClick={handleLinkClick}>
+            Job Tracker
+          </button>
+          <button className="resume-button" onClick={handleResumeClick}>
+            Resume
+          </button>
+        </div>
       </header>
 
       <main className="main-content">
