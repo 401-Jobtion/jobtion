@@ -1,6 +1,6 @@
 // src/components/NewJobModal.jsx
 import { useEffect, useState } from "react";
-import "./NewJobModal.css";
+import "./newJobModal.css";
 
 export default function NewJobModal({ open, onClose, onCreate }) {
   const [title, setTitle] = useState("");
