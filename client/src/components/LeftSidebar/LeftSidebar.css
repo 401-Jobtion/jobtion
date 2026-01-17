@@ -1,0 +1,43 @@
+.sidebar-section {
+  margin-bottom: 28px;
+}
+
+.sidebar-section h3 {
+  font-size: 20px;
+  font-weight: 500;
+  margin-bottom: 12px;
+  color: #e0e0e0;
+}
+
+.sidebar-item {
+  background: #3a3a3a;
+  padding: 10px 12px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
+.sidebar-item span {
+  display: block;
+  font-size: 14px;
+}
+
+.sidebar-item small {
+  font-size: 12px;
+  color: #aaa;
+}
+
+.add-btn {
+  margin-top: 8px;
+  width: 100%;
+  background: none;
+  border: 1px dashed #555;
+  color: #aaa;
+  padding: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.add-btn:hover {
+  border-color: #888;
+  color: #fff;
+}
