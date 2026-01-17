@@ -4,7 +4,7 @@ import JobForm from '../components/JobForm';
 import JobList from '../components/JobList';
 import ResumeUpload from '../components/ResumeUpload';
 import { useState } from 'react';
-
+import NewJobModal from '../components/NewJobModal';
 import { useNavigate } from 'react-router-dom';
 import './Home.css';
 
