@@ -7,7 +7,8 @@
   bottom: 0;
   width: 100vw;
   height: 100vh;
-  background-color: #ffffff;
+  background-color: #ffffff; /* White background */
+  color: #000000;            /* Default Black text */
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -15,67 +16,29 @@
 
 /* Fixed header */
 .header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 2rem;
-  background-color: #ffffff;
-  z-index: 10;
+  display: none;
 }
 
-.nav-buttons {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.icon-button {
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  color: #666;
-  cursor: pointer;
-  padding: 0.5rem;
-}
-
-.icon-button:hover {
-  color: #000;
-}
-
-.resume-button {
-  background-color: #00bcd4;
-  color: white;
-  border: none;
-  padding: 0.75rem 2rem;
-  font-size: 1rem;
-  font-weight: 500;
-  cursor: pointer;
-  border-radius: 4px;
-}
-
-.resume-button:hover {
-  background-color: #00acc1;
-}
-
-/* Main content area - takes remaining space */
 .main-content {
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: 2rem 4rem 2rem 4rem;
+  padding: 1rem 4rem 2rem 4rem;
   overflow: hidden;
   min-height: 0;
+  position: relative;
 }
 
-/* Fixed title - pushed to left */
+/* Title */
 .page-title {
-  font-size: 4rem;
+  font-size: 3.5rem;
   font-weight: 400;
-  margin: 0 0 2rem 0;
-  color: #000;
+  margin: 0 0 1rem 0;
+  color: #000000; /* Black */
   text-align: left;
 }
 
-/* Fixed tabs */
+/* Tabs */
 .tabs-container {
   display: flex;
   justify-content: space-between;
@@ -87,7 +50,6 @@
   display: flex;
   gap: 2rem;
   border-bottom: 2px solid #e0e0e0;
-  padding-bottom: 0;
 }
 
 .tab {
@@ -95,7 +57,7 @@
   border: none;
   padding: 1rem 0.5rem;
   font-size: 1rem;
-  color: #999;
+  color: #999; /* Grey for inactive */
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -106,43 +68,30 @@
 }
 
 .tab.active {
-  color: #000;
-  border-bottom-color: #000;
+  color: #000000; /* Black for active */
+  border-bottom-color: #000000;
 }
 
-.tab:hover {
-  color: #000;
-}
-
-.tab-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.tab-icon svg {
-  stroke: currentColor;
-}
-
+/* Actions */
 .actions {
   display: flex;
   gap: 1rem;
   align-items: center;
 }
 
-.search-button {
-  display: inline-flex;
+.icon-button {
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  padding: 0.5rem;
+  display: flex;
   align-items: center;
-  justify-content: center;
-}
-
-.search-button svg {
-  stroke: currentColor;
 }
 
 .new-button {
-  background-color: #00bcd4;
-  color: white;
+  background-color: #84cc16;
+  color: white; /* Button text stays white */
   border: none;
   padding: 0.5rem 1.5rem;
   font-size: 1rem;
@@ -151,11 +100,18 @@
   border-radius: 4px;
 }
 
-.new-button:hover {
-  background-color: #00acc1;
+.resume-button {
+  background-color: #00bcd4;
+  color: white; /* Button text stays white */
+  border: none;
+  padding: 0.5rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 4px;
 }
 
-/* Table container - this will scroll */
+/* Table */
 .table-wrapper {
   flex: 1;
   overflow-y: auto;
@@ -166,6 +122,7 @@
 .jobs-table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
 }
 
 .jobs-table thead {
@@ -175,109 +132,69 @@
   z-index: 5;
 }
 
-.jobs-table thead th {
-  text-align: left;
-  padding: 1rem;
+.jobs-table th {
+  padding: 1.5rem 1rem;
   font-weight: 500;
-  color: #999;
+  color: #999; /* Header text remains soft grey */
   border-bottom: 2px solid #e0e0e0;
   font-size: 0.95rem;
 }
 
-.job-title-header {
-  width: 40%;
-  text-align: left;
-}
+/* Alignment Classes */
+.job-title-header, .job-title { width: 40%; text-align: left; }
+.type-header, .job-type { width: 30%; text-align: left; }
+.due-date-header, .job-due-date { width: 30%; }
 
-.type-header {
-  width: 30%;
-  text-align: left;
-}
-
-.due-date-header {
-  width: 30%;
-  text-align: right;
-}
-
-.header-icon {
-  margin-right: 0.5rem;
-  display: inline-flex;
+.due-date-header-content {
+  display: flex;
   align-items: center;
-  vertical-align: middle;
-}
-
-.header-icon svg {
-  stroke: #999;
+  justify-content: flex-end;
+  gap: 0.5rem;
 }
 
 .jobs-table tbody tr {
   border-bottom: 1px solid #f0f0f0;
-  transition: background-color 0.2s;
-}
-
-.jobs-table tbody tr:hover {
-  background-color: #f9f9f9;
 }
 
 .jobs-table td {
   padding: 1.5rem 1rem;
   font-size: 1rem;
+  color: #000000; /* FORCE BLACK TEXT */
 }
 
 .job-title {
-  color: #000;
+  color: #000000;
   font-weight: 400;
   text-decoration: underline;
   cursor: pointer;
-  text-align: left;
-  width: 40%;
-}
-
-.job-type {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  text-align: left;
-  width: 30%;
-}
-
-.type-indicator {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  display: inline-block;
-  flex-shrink: 0;
-}
-
-.type-indicator.red {
-  background-color: #f44336;
-}
-
-.type-indicator.green {
-  background-color: #4caf50;
 }
 
 .job-due-date {
-  color: #666;
   text-align: right;
-  width: 30%;
+  color: #000000; /* FORCE BLACK TEXT */
 }
 
+/* Type Tags */
+.type-tag {
+  padding: 0.25rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.type-tag.red { background-color: rgba(244, 67, 54, 0.15); color: #d32f2f; }
+.type-tag.green { background-color: rgba(76, 175, 80, 0.15); color: #388e3c; }
+
+/* Urgency Bar */
 .urgency-bar {
-  position: fixed;
-  right: 0;
-  top: 0;
-  width: 20px;
-  height: 100vh;
+  position: absolute;
+  right: 20px;
+  bottom: 2rem;
+  height: calc(100% - 10rem);
+  width: 14px;
   background: linear-gradient(to bottom, 
-    #4caf50 0%, 
-    #8bc34a 20%, 
-    #cddc39 40%, 
-    #ffeb3b 50%, 
-    #ffc107 60%, 
-    #ff9800 70%, 
-    #ff5722 85%, 
-    #f44336 100%
+    #22c55e 0%, #84cc16 15%, #eab308 30%, 
+    #f59e0b 45%, #f97316 60%, #ef4444 75%, #dc2626 90%
   );
-  border-radius: 10px 0 0 10px;
+  border-radius: 10px;
 }
