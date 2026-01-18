@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 // Enhanced Resume Editor Component
 export default function ResumeEditorEnhanced() {
@@ -17,6 +17,56 @@ export default function ResumeEditorEnhanced() {
     id: "skills-1",
     categories: []
   });
+
+  // --- Saved Versions Logic ---
+  const [savedVersions, setSavedVersions] = useState(() => {
+    const saved = localStorage.getItem("resume_saved_versions");
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const saveCurrentVersion = () => {
+    const versionName = prompt("Enter a name for this version:", `Version ${savedVersions.length + 1}`);
+    if (!versionName) return;
+
+    const newVersion = {
+      id: Date.now(),
+      name: versionName,
+      timestamp: new Date().toISOString(),
+      data: { profile, experiences, projects, education, skills }
+    };
+
+    const updatedVersions = [newVersion, ...savedVersions];
+    setSavedVersions(updatedVersions);
+    localStorage.setItem("resume_saved_versions", JSON.stringify(updatedVersions));
+  };
+
+  const loadVersion = (version) => {
+    if (confirm(`Load "${version.name}"? Current unsaved changes will be lost.`)) {
+      setProfile(version.data.profile);
+      setExperiences(version.data.experiences);
+      setProjects(version.data.projects);
+      setEducation(version.data.education);
+      setSkills(version.data.skills);
+    }
+  };
+
+  const deleteVersion = (e, id) => {
+    e.stopPropagation();
+    const updated = savedVersions.filter(v => v.id !== id);
+    setSavedVersions(updated);
+    localStorage.setItem("resume_saved_versions", JSON.stringify(updated));
+  };
+
+  const getTimeAgo = (timestamp) => {
+    const diff = Date.now() - new Date(timestamp).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return "Just now";
+    if (mins < 60) return `${mins}m ago`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours}h ago`;
+    return new Date(timestamp).toLocaleDateString();
+  };
+  // --- End Saved Versions Logic ---
 
   const [draggedItem, setDraggedItem] = useState(null);
   const [jobUrl, setJobUrl] = useState("");
@@ -412,7 +462,7 @@ export default function ResumeEditorEnhanced() {
         </div>
       </main>
 
-      {/* Right Sidebar - AI Tools */}
+      {/* Right Sidebar - AI Tools & Saved Versions */}
       <aside style={{
         width: rightCollapsed ? "60px" : "320px",
         background: "#2b2b2b",
@@ -492,38 +542,69 @@ export default function ResumeEditorEnhanced() {
               padding: "20px",
               borderRadius: "8px"
             }}>
-              <h3 style={{ fontSize: "16px", marginTop: 0, marginBottom: "15px" }}>
-                💾 Saved Versions
-              </h3>
-              <div style={{
-                background: "#2b2b2b",
-                padding: "15px",
-                borderRadius: "6px",
-                marginBottom: "10px",
-                cursor: "pointer",
-                border: "1px solid #555"
-              }}>
-                <div style={{ fontSize: "14px", fontWeight: "500", marginBottom: "5px" }}>
-                  Google SWE - Optimized
-                </div>
-                <div style={{ fontSize: "12px", color: "#999" }}>
-                  Saved 2 hours ago
-                </div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px" }}>
+                <h3 style={{ fontSize: "16px", margin: 0 }}>
+                  💾 Saved Versions
+                </h3>
+                <button 
+                  onClick={saveCurrentVersion}
+                  style={{
+                    background: "#4CAF50",
+                    border: "none",
+                    color: "white",
+                    padding: "4px 8px",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                    fontSize: "12px"
+                  }}
+                >
+                  Save New
+                </button>
               </div>
-              <div style={{
-                background: "#2b2b2b",
-                padding: "15px",
-                borderRadius: "6px",
-                cursor: "pointer",
-                border: "1px solid #555"
-              }}>
-                <div style={{ fontSize: "14px", fontWeight: "500", marginBottom: "5px" }}>
-                  Master Resume
+
+              {savedVersions.length === 0 ? (
+                <div style={{ textAlign: "center", color: "#888", fontSize: "13px", padding: "10px" }}>
+                  No saved versions yet.
                 </div>
-                <div style={{ fontSize: "12px", color: "#999" }}>
-                  Last edited yesterday
-                </div>
-              </div>
+              ) : (
+                savedVersions.map(version => (
+                  <div 
+                    key={version.id}
+                    onClick={() => loadVersion(version)}
+                    style={{
+                      background: "#2b2b2b",
+                      padding: "15px",
+                      borderRadius: "6px",
+                      marginBottom: "10px",
+                      cursor: "pointer",
+                      border: "1px solid #555",
+                      position: "relative"
+                    }}
+                  >
+                    <div style={{ fontSize: "14px", fontWeight: "500", marginBottom: "5px", color: "#fff" }}>
+                      {version.name}
+                    </div>
+                    <div style={{ fontSize: "12px", color: "#999" }}>
+                      {getTimeAgo(version.timestamp)}
+                    </div>
+                    <button 
+                      onClick={(e) => deleteVersion(e, version.id)}
+                      style={{
+                        position: "absolute",
+                        right: "10px",
+                        top: "15px",
+                        background: "none",
+                        border: "none",
+                        color: "#f44336",
+                        cursor: "pointer",
+                        fontSize: "14px"
+                      }}
+                    >
+                      🗑️
+                    </button>
+                  </div>
+                ))
+              )}
             </div>
           </>
         )}

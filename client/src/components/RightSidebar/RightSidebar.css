@@ -2,20 +2,14 @@
   position: fixed;
   top: 0;
   right: 0;
-
-  width: 280px;
+  width: 320px;
   height: 100vh;
-
   background: #2b2b2b;
   color: #eaeaea;
-
   display: flex;
   flex-direction: column;
-
   border-left: 1px solid #3a3a3a;
-  box-shadow: -4px 0 12px rgba(0, 0, 0, 0.35);
-
-  transition: width 0.25s ease;
+  transition: width 0.3s ease;
   z-index: 100;
 }
 
@@ -23,11 +17,65 @@
   width: 60px;
 }
 
-/* Thumbnails */
+.version-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
 
-.thumbnail {
-  height: 80px;
-  background: #3a3a3a;
-  border-radius: 8px;
-  margin-bottom: 12px;
+.add-version-btn {
+  background: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 10px;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.version-card {
+  background: #2b2b2b;
+  padding: 12px;
+  border-radius: 6px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  border: 1px solid #555;
+  position: relative;
+  transition: border-color 0.2s;
+}
+
+.version-card:hover {
+  border-color: #4CAF50;
+}
+
+.version-name {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.version-time {
+  font-size: 12px;
+  color: #999;
+}
+
+.delete-version-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: none;
+  border: none;
+  color: #f44336;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.empty-state {
+  font-size: 12px;
+  color: #888;
+  text-align: center;
+  padding: 10px;
 }
