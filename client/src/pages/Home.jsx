@@ -14,8 +14,8 @@ function Home() {
     { id: 2, title: 'Data Analyst TD', type: 'Data', typeColor: 'green', dueDate: 'March 1, 2025', status: 'Applied', appliedAt: new Date() },
     { id: 3, title: 'Pinterest SWE', type: 'SWE', typeColor: 'red', dueDate: 'March 14, 2025', status: 'Applied', appliedAt: new Date() },
     { id: 4, title: 'NVIDIA Data Science', type: 'Data', typeColor: 'green', dueDate: 'March 14, 2025', status: 'Applied', appliedAt: new Date() },
-    { id: 5, title: 'UofA RA', type: '', typeColor: '', dueDate: 'March 14, 2025', status: 'Applied', appliedAt: new Date() },
-    { id: 6, title: 'McDonald cashier', type: '', typeColor: '', dueDate: 'April 1, 2025', status: 'Applied', appliedAt: new Date() }
+    { id: 5, title: 'UofA RA', type: 'Misc', typeColor: 'yellow', dueDate: 'March 14, 2025', status: 'Applied', appliedAt: new Date() },
+    { id: 6, title: 'McDonald cashier', type: 'Misc', typeColor: 'yellow', dueDate: 'April 1, 2025', status: 'Applied', appliedAt: new Date() }
   ]);
 
   // Logic for the Emoji Slider
@@ -78,7 +78,7 @@ function Home() {
   return (
     <div className="home-container">
       <main className="main-content">
-        <h1 className="page-title">Jobs</h1>
+        <h1 className="page-title">Jobtion</h1>
 
         <div className="tabs-container">
           <div className="tabs">
