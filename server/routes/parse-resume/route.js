@@ -1,14 +1,13 @@
 import express from 'express';
 import multer from 'multer';
-import { createRequire } from 'module';
-
-const require = createRequire(import.meta.url);
-const pdf = require('pdf-parse');
+import pdfParse from 'pdf-parse-fork';
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
 router.post('/', upload.single('file'), async (req, res) => {
+  console.log('Parse resume route hit!');
+  
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No file provided' });
@@ -18,7 +17,7 @@ router.post('/', upload.single('file'), async (req, res) => {
       return res.status(400).json({ error: 'File must be a PDF' });
     }
 
-    const data = await pdf(req.file.buffer);
+    const data = await pdfParse(req.file.buffer);
     const text = data.text.trim();
 
     if (!text) {

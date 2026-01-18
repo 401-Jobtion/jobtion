@@ -1,56 +1,56 @@
-// In client/src/pages/Home.jsx, the imports should be:
-import { getJobs, addJob, updateJob, deleteJob, getStoredResume } from '../lib/storage';
-import JobForm from '../components/JobForm';
-import JobList from '../components/JobList';
-import ResumeUpload from '../components/ResumeUpload';
-import { useState } from 'react';
-import NewJobModal from "../components/NewJobModal"
+import { useState, useEffect } from 'react';
+import { getJobs, addJob, updateJob, deleteJob } from '../lib/storage';
+import NewJobModal from "../components/NewJobModal";
+import EditJobModal from "../components/EditJobModal";
 import { useNavigate } from 'react-router-dom';
 import './Home.css';
-
-
-
 
 function Home() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('Applied');
   const [showNewJob, setShowNewJob] = useState(false);
+  const [editingJob, setEditingJob] = useState(null);
+  const [jobs, setJobs] = useState([]);
+  const [isLoaded, setIsLoaded] = useState(false);
 
-  // ✅ jobs (now include optional link + description on seed data too if you want)
-  const [jobs, setJobs] = useState([
-    { id: 1, title: 'Google SWE', link: '', description: '', type: 'SWE', typeColor: 'red', dueDate: 'February 28, 2025', status: 'Applied' },
-    { id: 2, title: 'Data Analyst TD', link: '', description: '', type: 'Data', typeColor: 'green', dueDate: 'March 1, 2025', status: 'Applied' },
-    { id: 3, title: 'Pinterest SWE', link: '', description: '', type: 'SWE', typeColor: 'red', dueDate: 'March 14, 2025', status: 'Applied' },
-    { id: 4, title: 'NVIDIA Data Science', link: '', description: '', type: 'Data', typeColor: 'green', dueDate: 'March 14, 2025', status: 'Applied' },
-    { id: 5, title: 'UofA RA', link: '', description: '', type: '', typeColor: '', dueDate: 'March 14, 2025', status: 'Applied' },
-    { id: 6, title: 'McDonald cashier', link: '', description: '', type: '', typeColor: '', dueDate: 'April 1, 2025', status: 'Applied' }
-  ]);
+  useEffect(() => {
+    const storedJobs = getJobs();
+    if (storedJobs.length > 0) {
+      setJobs(storedJobs);
+    } else {
+      setJobs([
+        { id: 'job-1', title: 'Google SWE', url: '', description: '', requirements: [], type: 'SWE', typeColor: 'red', dueDate: 'February 28, 2025', status: 'applied', company: 'Google', location: '', salary: '', notes: '', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+        { id: 'job-2', title: 'Data Analyst TD', url: '', description: '', requirements: [], type: 'Data', typeColor: 'green', dueDate: 'March 1, 2025', status: 'applied', company: 'TD Bank', location: '', salary: '', notes: '', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+      ]);
+    }
+    setIsLoaded(true);
+  }, []);
 
-  const filteredJobs = jobs.filter(job => job.status === activeTab);
-  // helper: convert yyyy-mm-dd to "March 14, 2025"
-  function formatHumanDate(yyyyMmDd) {
-    if (!yyyyMmDd) return '';
-    const d = new Date(yyyyMmDd + 'T00:00:00');
-    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+  const filteredJobs = jobs.filter(job => {
+    if (activeTab === 'Applied') return job.status === 'saved' || job.status === 'applied';
+    if (activeTab === 'Interview') return job.status === 'interviewing';
+    if (activeTab === 'Accepted') return job.status === 'offer';
+    return true;
+  });
+
+  function handleCreateJob(newJob) {
+    setJobs(addJob(newJob));
   }
 
-  // ✅ called when modal submits
-  function handleCreateJob(newJob) {
-    const nextId = Math.max(0, ...jobs.map(j => j.id)) + 1;
+  function handleUpdateJob(updatedJob) {
+    setJobs(updateJob(updatedJob));
+  }
 
-    setJobs(prev => [
-      {
-        id: nextId,
-        title: newJob.title,
-        link: (newJob.link || '').trim(), // ✅ NEW
-        description: newJob.description,
-        dueDate: formatHumanDate(newJob.dueDate),
-        status: 'Applied',
-        type: newJob.type || '',
-        typeColor: newJob.typeColor || ''
-      },
-      ...prev
-    ]);
+  function handleDeleteJob(id) {
+    setJobs(deleteJob(id));
+  }
+
+  function handleEditClick(job) {
+    setEditingJob(job);
+  }
+
+  if (!isLoaded) {
+    return <div className="home-container">Loading...</div>;
   }
 
   return (
@@ -108,10 +108,7 @@ function Home() {
               </svg>
             </button>
             <button className="new-button" onClick={() => setShowNewJob(true)}>New</button>
-            <button
-              className="resume-button"
-              onClick={() => navigate("/resume")}
-            >Resume</button>
+            <button className="resume-button" onClick={() => navigate("/resume")}>Resume</button>
           </div>
         </div>
 
@@ -119,81 +116,51 @@ function Home() {
           <table className="jobs-table">
             <thead>
               <tr>
-                <th className="job-title-header">
-                  <span className="header-icon" style={{ marginRight: '8px', verticalAlign: 'middle' }}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
-                      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
-                    </svg>
-                  </span>
-                  Job Title
-                </th>
-
-                <th className="type-header">
-                  <span className="header-icon" style={{ marginRight: '8px', verticalAlign: 'middle' }}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                    </svg>
-                  </span>
-                  Type
-                </th>
-
-                <th className="due-date-header">
-                  <div className="due-date-header-content">
-                    <span className="header-icon" style={{ verticalAlign: 'middle' }}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <polyline points="12 6 12 12 16 14"></polyline>
-                      </svg>
-                    </span>
-                    Due Date
-                  </div>
-                </th>
+                <th className="job-title-header">Job Title</th>
+                <th className="type-header">Type</th>
+                <th className="due-date-header">Due Date</th>
+                <th className="actions-header">Actions</th>
               </tr>
             </thead>
-
             <tbody>
               {filteredJobs.map(job => (
                 <tr key={job.id}>
                   <td className="job-title">
-                    {job.link ? (
-                      <a
-                        href={job.link}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="job-link"
-                      >
+                    {job.url ? (
+                      <a href={job.url} target="_blank" rel="noreferrer" className="job-link">
                         {job.title}
                       </a>
                     ) : (
                       job.title
                     )}
                   </td>
-
                   <td className="job-type">
-                    {job.type && (
-                      <span className={`type-tag ${job.typeColor}`}>
-                        {job.type}
-                      </span>
-                    )}
+                    {job.type && <span className={`type-tag ${job.typeColor}`}>{job.type}</span>}
                   </td>
-
                   <td className="job-due-date">{job.dueDate}</td>
+                  <td className="job-actions">
+                    <button className="edit-btn" onClick={() => handleEditClick(job)}>Edit</button>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-
-        <div className="urgency-bar"></div>
-
-        {/* ✅ MODAL */}
-        <NewJobModal
-          open={showNewJob}
-          onClose={() => setShowNewJob(false)}
-          onCreate={handleCreateJob}
-        />
       </main>
+
+      <NewJobModal
+        open={showNewJob}
+        onClose={() => setShowNewJob(false)}
+        onCreate={handleCreateJob}
+      />
+
+      <EditJobModal
+        open={!!editingJob}
+        job={editingJob}
+        onClose={() => setEditingJob(null)}
+        onUpdate={handleUpdateJob}
+        onDelete={handleDeleteJob}
+      />
     </div>
   );
 }
