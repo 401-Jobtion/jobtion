@@ -157,37 +157,43 @@
 }
 
 .new-button {
-  background-color: #84cc16;
-  color: white;
-  border: none;
+  /* Coding Green Background */
+  background-color: #22c55e; 
+  color: #ffffff;
+  border: 2px solid #22c55e;
   padding: 0.5rem 1.5rem;
   font-size: 1rem;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
-  border-radius: 4px;
-  transition: background 0.2s;
+  border-radius: 6px;
+  transition: all 0.2s ease;
 }
 
 .new-button:hover {
-  background-color: #65a30d;
+  background-color: #16a34a;
+  border-color: #16a34a;
+  transform: translateY(-1px);
 }
 
 .resume-button {
-  background-color: #00bcd4;
-  color: white;
-  border: none;
+  /* Coding Green Text, White Background */
+  background-color: transparent;;
+  color: #22c55e;
+  border: 2px solid #22c55e;
   padding: 0.5rem 1.5rem;
   font-size: 1rem;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
-  border-radius: 4px;
-  transition: background 0.2s;
+  border-radius: 6px;
+  transition: all 0.2s ease;
 }
 
 .resume-button:hover {
-  background-color: #0097a7;
+  background-color: #f0fdf4; /* Very light green hint */
+  color: #16a34a;
+  border-color: #16a34a;
+  transform: translateY(-1px);
 }
-
 /* Table Layout */
 .table-wrapper {
   flex: 1;

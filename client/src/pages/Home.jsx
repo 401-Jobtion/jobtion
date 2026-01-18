@@ -271,8 +271,8 @@ function Home() {
           </div>
 
           <div className="actions">
-            <button className="new-button" onClick={() => setShowNewJob(true)}>New</button>
-            <button className="resume-button" onClick={() => navigate("/resume")}>Resume</button>
+            <button className="new-button" onClick={() => setShowNewJob(true)}>NEW</button>
+            <button className="resume-button" onClick={() => navigate("/resume")}>RESUME</button>
           </div>
         </div>
 
