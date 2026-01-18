@@ -25,7 +25,12 @@ export default function ResumeEditorEnhanced() {
       projects: [],
       education: []
     };
-});
+  });
+
+  const [savedSkillSets, setSavedSkillSets] = useState(() => {
+    const saved = localStorage.getItem("resume_saved_skillsets");
+    return saved ? JSON.parse(saved) : [];
+  });
 
   // --- Saved Versions Logic ---
   const [savedVersions, setSavedVersions] = useState(() => {
@@ -123,6 +128,42 @@ export default function ResumeEditorEnhanced() {
     
     setSavedInfo(newSavedInfo);
     localStorage.setItem("resume_saved_info", JSON.stringify(newSavedInfo));
+  };
+
+  // Save current skills to library
+  const saveSkillSetToLibrary = () => {
+    if (skills.categories.length === 0) {
+      alert("No skills to save. Please add some skills first.");
+      return;
+    }
+    
+    const skillSetName = prompt("Enter a name for this skill set:", "Skills Set");
+    if (!skillSetName) return;
+
+    const newSkillSet = {
+      savedId: `skillset-${Date.now()}`,
+      name: skillSetName,
+      categories: skills.categories
+    };
+
+    const updatedSkillSets = [newSkillSet, ...savedSkillSets];
+    setSavedSkillSets(updatedSkillSets);
+    localStorage.setItem("resume_saved_skillsets", JSON.stringify(updatedSkillSets));
+  };
+
+  // Load saved skill set
+  const loadSkillSetFromLibrary = (skillSet) => {
+    setSkills({
+      id: skills.id,
+      categories: skillSet.categories
+    });
+  };
+
+  // Delete saved skill set
+  const deleteSavedSkillSet = (savedId) => {
+    const updated = savedSkillSets.filter(s => s.savedId !== savedId);
+    setSavedSkillSets(updated);
+    localStorage.setItem("resume_saved_skillsets", JSON.stringify(updated));
   };
 
   const [draggedItem, setDraggedItem] = useState(null);
@@ -834,9 +875,62 @@ export default function ResumeEditorEnhanced() {
                 </div>
               )}
 
+              {/* Skills */}
+              {savedSkillSets.length > 0 && (
+                <div style={{ marginBottom: "20px" }}>
+                  <h4 style={{ fontSize: "13px", color: "#4CAF50", marginBottom: "10px", fontWeight: "600" }}>
+                    Skills
+                  </h4>
+                  {savedSkillSets.map((skillSet) => (
+                    <div
+                      key={skillSet.savedId}
+                      onClick={() => loadSkillSetFromLibrary(skillSet)}
+                      style={{
+                        background: "#2b2b2b",
+                        padding: "12px",
+                        borderRadius: "6px",
+                        marginBottom: "8px",
+                        cursor: "pointer",
+                        border: "1px solid #555",
+                        position: "relative",
+                        transition: "all 0.2s"
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = "#353535"}
+                      onMouseLeave={(e) => e.currentTarget.style.background = "#2b2b2b"}
+                    >
+                      <div style={{ fontSize: "13px", fontWeight: "500", marginBottom: "3px", color: "#fff", paddingRight: "25px" }}>
+                        {skillSet.name}
+                      </div>
+                      <div style={{ fontSize: "12px", color: "#aaa" }}>
+                        {skillSet.categories.length} {skillSet.categories.length === 1 ? 'category' : 'categories'}
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteSavedSkillSet(skillSet.savedId);
+                        }}
+                        style={{
+                          position: "absolute",
+                          right: "10px",
+                          top: "12px",
+                          background: "none",
+                          border: "none",
+                          color: "#f44336",
+                          cursor: "pointer",
+                          fontSize: "14px"
+                        }}
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
               {savedInfo.experiences.length === 0 && 
               savedInfo.projects.length === 0 && 
-              savedInfo.education.length === 0 && (
+              savedInfo.education.length === 0 && 
+              savedSkillSets.length === 0 && (
                 <div style={{ textAlign: "center", color: "#888", fontSize: "13px", padding: "10px" }}>
                   No saved blocks yet.
                 </div>
@@ -909,6 +1003,8 @@ export default function ResumeEditorEnhanced() {
       {editingSkills && (
         <SkillsModal
           skills={skills}
+          savedSkillSets={savedSkillSets}
+          setSavedSkillSets={setSavedSkillSets}
           onSave={(data) => {
             setSkills(data);
             setEditingSkills(null);
@@ -1268,7 +1364,7 @@ function EducationModal({ education, onSave, onClose }) {
   );
 }
 
-function SkillsModal({ skills, onSave, onClose }) {
+function SkillsModal({ skills, savedSkillSets, setSavedSkillSets, onSave, onClose }) {
   const [formData, setFormData] = useState(skills);
 
   const updateCategory = (index, field, value) => {
@@ -1369,7 +1465,75 @@ function SkillsModal({ skills, onSave, onClose }) {
           + Add Category
         </button>
 
-        <ModalActions onCancel={onClose} onSave={() => onSave(formData)} />
+        <div style={{ display: "flex", gap: "10px", justifyContent: "space-between", alignItems: "center" }}>
+          <button
+            onClick={() => {
+              if (formData.categories.length === 0) {
+                alert("No skills to save. Please add some skills first.");
+                return;
+              }
+              
+              const skillSetName = prompt("Enter a name for this skill set:", "Skills Set");
+              if (!skillSetName) return;
+
+              const newSkillSet = {
+                savedId: `skillset-${Date.now()}`,
+                name: skillSetName,
+                categories: formData.categories
+              };
+
+              const updatedSkillSets = [newSkillSet, ...savedSkillSets];
+              setSavedSkillSets(updatedSkillSets);
+              localStorage.setItem("resume_saved_skillsets", JSON.stringify(updatedSkillSets));
+              
+              alert(`Skill set "${skillSetName}" saved!`);
+            }}
+            style={{
+              padding: "10px 20px",
+              background: "#4CAF50",
+              color: "white",
+              border: "none",
+              borderRadius: "6px",
+              cursor: "pointer",
+              fontSize: "14px",
+              fontWeight: "500"
+            }}
+          >
+            💾 Remember
+          </button>
+          
+          <div style={{ display: "flex", gap: "10px" }}>
+            <button
+              onClick={onClose}
+              style={{
+                padding: "10px 20px",
+                background: "#444",
+                color: "white",
+                border: "none",
+                borderRadius: "6px",
+                cursor: "pointer",
+                fontSize: "14px"
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => onSave(formData)}
+              style={{
+                padding: "10px 20px",
+                background: "#4CAF50",
+                color: "white",
+                border: "none",
+                borderRadius: "6px",
+                cursor: "pointer",
+                fontSize: "14px",
+                fontWeight: "500"
+              }}
+            >
+              Save
+            </button>
+          </div>
+        </div>
       </div>
     </ModalBackdrop>
   );
