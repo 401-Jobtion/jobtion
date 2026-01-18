@@ -172,9 +172,12 @@ function Home() {
   const toggleTheme = () => setIsDark(!isDark);
 
   // Mood slider logic - track jobs applied today
+  // Mood slider logic - track jobs applied today
   const jobsAppliedToday = jobs.filter(job => {
     if (!job.createdAt) return false;
+    if (!job.createdAt) return false;
     const today = new Date().toDateString();
+    return new Date(job.createdAt).toDateString() === today;
     return new Date(job.createdAt).toDateString() === today;
   }).length;
 
@@ -284,6 +287,7 @@ function Home() {
                 <th className="type-header">Type</th>
                 <th className="due-date-header">Due Date</th>
                 <th className="actions-header">Actions</th>
+                <th className="actions-header">Actions</th>
                 <th className="checkbox-header">Interview</th>
                 <th className="checkbox-header">Accepted</th>
               </tr>
@@ -336,6 +340,7 @@ function Home() {
         </div>
 
         {/* Mood Slider Section */}
+        {/* Mood Slider Section */}
         <div className="urgency-container">
           <div className="urgency-bar">
             <div 
@@ -347,7 +352,21 @@ function Home() {
           </div>
         </div>
       </main>
+      </main>
 
+      <NewJobModal
+        open={showNewJob}
+        onClose={() => setShowNewJob(false)}
+        onCreate={handleCreateJob}
+      />
+
+      <EditJobModal
+        open={!!editingJob}
+        job={editingJob}
+        onClose={() => setEditingJob(null)}
+        onUpdate={handleUpdateJob}
+        onDelete={handleDeleteJob}
+      />
       <NewJobModal
         open={showNewJob}
         onClose={() => setShowNewJob(false)}

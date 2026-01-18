@@ -1,33 +1,37 @@
-.editor-main {
+/* Main container - flexbox layout */
+.editor-wrapper {
+  display: flex;
   min-height: 100vh;
-
-  /* protect canvas from fixed sidebars */
-  padding-left: 280px;
-  padding-right: 280px;
-
-  background: #2b2b2b;
-
+  width: 100%;
+  overflow-x: hidden;
+}
+.editor-main {
+  flex: 1;
+  min-height: 100vh;
+  background: #1e1e1e;
   display: flex;
   justify-content: center;
   overflow-y: auto;
+  padding: 32px 20px;
 }
 
 .editor-center {
-  padding: 0 32px;
   display: flex;
   justify-content: center;
 }
 
 .resume-canvas {
-  margin-top: 32px;
-
   width: 794px;
+  min-width: 794px;
+  max-width: 794px; /* Add this */
   min-height: 1123px;
-
   background: white;
-  box-shadow: 0 0 10px rgba(0,0,0,0.15);
+  box-shadow: 0 0 20px rgba(0,0,0,0.3);
+  padding: 40px 50px; /* Reduced horizontal padding from 60px to 50px */
+  box-sizing: border-box; /* Important - padding included in width */
 }
 
+/* ... rest of your resume-canvas styles stay the same ... */
 .resume-profile {
   padding: 24px 32px 16px;
   text-align: center;
