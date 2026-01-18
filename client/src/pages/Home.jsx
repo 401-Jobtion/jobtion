@@ -53,6 +53,7 @@ function Home() {
     return <div className="home-container">Loading...</div>;
   }
 
+
   return (
     <div className="home-container">
       <main className="main-content">
@@ -60,53 +61,38 @@ function Home() {
 
         <div className="tabs-container">
           <div className="tabs">
-            <button
-              className={`tab ${activeTab === 'Applied' ? 'active' : ''}`}
-              onClick={() => setActiveTab('Applied')}
-            >
-              <span className="tab-icon">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                  <line x1="9" y1="3" x2="9" y2="21"></line>
-                </svg>
-              </span>
-              Applied
-            </button>
-
-            <button
-              className={`tab ${activeTab === 'Interview' ? 'active' : ''}`}
-              onClick={() => setActiveTab('Interview')}
-            >
-              <span className="tab-icon">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                  <circle cx="12" cy="7" r="4"></circle>
-                </svg>
-              </span>
-              Interview
-            </button>
-
-            <button
-              className={`tab ${activeTab === 'Accepted' ? 'active' : ''}`}
-              onClick={() => setActiveTab('Accepted')}
-            >
-              <span className="tab-icon">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                  <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                </svg>
-              </span>
-              Accepted
-            </button>
+            {['Applied', 'Interview', 'Accepted'].map((tab) => (
+              <button
+                key={tab}
+                className={`tab ${activeTab === tab ? 'active' : ''}`}
+                onClick={() => setActiveTab(tab)}
+              >
+                <span className="tab-icon">
+                  {tab === 'Applied' && (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                      <line x1="9" y1="3" x2="9" y2="21"></line>
+                    </svg>
+                  )}
+                  {tab === 'Interview' && (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                      <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                  )}
+                  {tab === 'Accepted' && (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                      <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                  )}
+                </span>
+                {tab}
+              </button>
+            ))}
           </div>
 
           <div className="actions">
-            <button className="icon-button">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="11" cy="11" r="8"></circle>
-                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-              </svg>
-            </button>
             <button className="new-button" onClick={() => setShowNewJob(true)}>New</button>
             <button className="resume-button" onClick={() => navigate("/resume")}>Resume</button>
           </div>
@@ -120,16 +106,16 @@ function Home() {
                 <th className="type-header">Type</th>
                 <th className="due-date-header">Due Date</th>
                 <th className="actions-header">Actions</th>
+                <th className="checkbox-header">Interview</th>
+                <th className="checkbox-header">Accepted</th>
               </tr>
             </thead>
             <tbody>
               {filteredJobs.map(job => (
                 <tr key={job.id}>
                   <td className="job-title">
-                    {job.url ? (
-                      <a href={job.url} target="_blank" rel="noreferrer" className="job-link">
-                        {job.title}
-                      </a>
+                    {job.link ? (
+                      <a href={job.link} target="_blank" rel="noreferrer" className="job-link">{job.title}</a>
                     ) : (
                       job.title
                     )}
@@ -138,14 +124,45 @@ function Home() {
                     {job.type && <span className={`type-tag ${job.typeColor}`}>{job.type}</span>}
                   </td>
                   <td className="job-due-date">{job.dueDate}</td>
-                  <td className="job-actions">
-                    <button className="edit-btn" onClick={() => handleEditClick(job)}>Edit</button>
+                  
+                  <td className="status-checkbox-cell">
+                    <input 
+                      type="checkbox" 
+                      checked={job.status === 'Interview' || job.status === 'Accepted'}
+                      onChange={(e) => handleStatusChange(job.id, 'Interview', e.target.checked)}
+                    />
+                  </td>
+
+                  <td className="status-checkbox-cell">
+                    <input 
+                      type="checkbox" 
+                      checked={job.status === 'Accepted'}
+                      onChange={(e) => handleStatusChange(job.id, 'Accepted', e.target.checked)}
+                    />
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+
+        {/* New Mood Slider Section */}
+        <div className="urgency-container">
+          <div className="urgency-bar">
+            <div 
+              className="emoji-slider" 
+              style={{ bottom: `calc(${position}% - 12px)` }}
+            >
+              {emoji}
+            </div>
+          </div>
+        </div>
+
+        <NewJobModal
+          open={showNewJob}
+          onClose={() => setShowNewJob(false)}
+          onCreate={handleCreateJob}
+        />
       </main>
 
       <NewJobModal

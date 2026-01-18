@@ -1,3 +1,7 @@
+/* =========================
+   LEFT SIDEBAR CONTAINER
+   ========================= */
+
 .left-sidebar {
   position: fixed;
   top: 0;
@@ -20,7 +24,9 @@
   width: 60px;
 }
 
-/* Sections */
+/* =========================
+   SECTIONS
+   ========================= */
 
 .sidebar-section {
   margin-bottom: 28px;
@@ -32,6 +38,10 @@
   margin-bottom: 10px;
   color: #e0e0e0;
 }
+
+/* =========================
+   ADD BUTTON
+   ========================= */
 
 .add-btn {
   width: 100%;
@@ -48,4 +58,144 @@
 .add-btn:hover {
   border-color: #888;
   color: #fff;
+}
+
+/* =========================
+   PROFILE ITEM
+   ========================= */
+
+.profile-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  background: #3a3a3a;
+  padding: 10px 12px;
+  border-radius: 6px;
+
+  margin-bottom: 10px;
+  position: relative;
+}
+
+.profile-item:hover {
+  background: #444;
+}
+
+/* =========================
+   DRAG HANDLE (6 DOTS)
+   ========================= */
+
+/* =========================
+   DRAG HANDLE (SVG)
+   ========================= */
+
+.drag-handle {
+  width: 16px;
+  min-width: 16px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  cursor: grab;
+}
+
+.drag-handle svg {
+  fill: #9a9a9a;
+}
+
+.profile-item:hover .drag-handle svg {
+  fill: #cfcfcf;
+}
+
+/* =========================
+   PROFILE TEXT
+   ========================= */
+
+.profile-text {
+  flex: 1;
+  overflow: hidden;
+}
+
+.profile-text .profile-name {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: #fff;
+}
+
+.profile-text small {
+  font-size: 12px;
+  color: #aaa;
+}
+
+/* =========================
+   EDIT BUTTON
+   ========================= */
+
+.edit-btn {
+  opacity: 0;
+  background: none;
+  border: none;
+  color: #bbb;
+  cursor: pointer;
+  font-size: 14px;
+  transition: opacity 0.15s ease;
+}
+
+.profile-item:hover .edit-btn {
+  opacity: 1;
+}
+
+.edit-btn:hover {
+  color: #fff;
+}
+
+/* =========================
+   MODAL
+   ========================= */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  z-index: 200;
+}
+
+.modal {
+  background: #2b2b2b;
+  padding: 20px;
+  border-radius: 8px;
+  width: 320px;
+}
+
+.modal h3 {
+  margin-bottom: 12px;
+  color: #fff;
+  font-weight: 500;
+}
+
+.modal input {
+  width: 93%;
+  padding: 10px;
+  margin-bottom: 12px;
+
+  background: #1f1f1f;
+  border: 1px solid #444;
+  color: white;
+  border-radius: 4px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+
+  max-width: 260px;
+  margin-left: auto;
 }

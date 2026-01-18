@@ -7,16 +7,11 @@
   bottom: 0;
   width: 100vw;
   height: 100vh;
-  background-color: #ffffff; /* White background */
-  color: #000000;            /* Default Black text */
+  background-color: #ffffff;
+  color: #000000;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-}
-
-/* Fixed header */
-.header {
-  display: none;
 }
 
 .main-content {
@@ -29,12 +24,11 @@
   position: relative;
 }
 
-/* Title */
 .page-title {
   font-size: 3.5rem;
   font-weight: 400;
   margin: 0 0 1rem 0;
-  color: #000000; /* Black */
+  color: #000000;
   text-align: left;
 }
 
@@ -57,7 +51,7 @@
   border: none;
   padding: 1rem 0.5rem;
   font-size: 1rem;
-  color: #999; /* Grey for inactive */
+  color: #999;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -68,7 +62,7 @@
 }
 
 .tab.active {
-  color: #000000; /* Black for active */
+  color: #000000;
   border-bottom-color: #000000;
 }
 
@@ -79,19 +73,9 @@
   align-items: center;
 }
 
-.icon-button {
-  background: none;
-  border: none;
-  color: #666;
-  cursor: pointer;
-  padding: 0.5rem;
-  display: flex;
-  align-items: center;
-}
-
 .new-button {
   background-color: #84cc16;
-  color: white; /* Button text stays white */
+  color: white;
   border: none;
   padding: 0.5rem 1.5rem;
   font-size: 1rem;
@@ -102,7 +86,7 @@
 
 .resume-button {
   background-color: #00bcd4;
-  color: white; /* Button text stays white */
+  color: white;
   border: none;
   padding: 0.5rem 1.5rem;
   font-size: 1rem;
@@ -111,18 +95,22 @@
   border-radius: 4px;
 }
 
-/* Table */
+/* Table Layout */
 .table-wrapper {
   flex: 1;
   overflow-y: auto;
   margin-top: 1rem;
   min-height: 0;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 .jobs-table {
   width: 100%;
   border-collapse: collapse;
-  table-layout: fixed;
+  table-layout: fixed; /* Ensures headers and body align */
 }
 
 .jobs-table thead {
@@ -135,46 +123,68 @@
 .jobs-table th {
   padding: 1.5rem 1rem;
   font-weight: 500;
-  color: #999; /* Header text remains soft grey */
+  color: #999;
   border-bottom: 2px solid #e0e0e0;
   font-size: 0.95rem;
+  text-align: left; /* Keep all text aligned left for the straight line look */
 }
 
-/* Alignment Classes */
-.job-title-header, .job-title { width: 40%; text-align: left; }
-.type-header, .job-type { width: 30%; text-align: left; }
-.due-date-header, .job-due-date { width: 30%; }
+/* Column Width Alignment Fixes */
+.job-title-header, .job-title { width: 30%; }
+.type-header, .job-type { width: 15%; }
+.due-date-header, .job-due-date { width: 25%; }
 
-.due-date-header-content {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 0.5rem;
-}
-
-.jobs-table tbody tr {
-  border-bottom: 1px solid #f0f0f0;
+/* Checkbox Column Alignment - Set to left to match headers */
+.checkbox-header, .status-checkbox-cell { 
+  width: 15%; 
+  text-align: left; 
 }
 
 .jobs-table td {
   padding: 1.5rem 1rem;
   font-size: 1rem;
-  color: #000000; /* FORCE BLACK TEXT */
-}
-
-.job-title {
   color: #000000;
-  font-weight: 400;
-  text-decoration: underline;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+/* Custom Checkbox Styling: White background, Black outline */
+.status-checkbox-cell input {
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
+  width: 20px;
+  height: 20px;
+  border: 2px solid #000000; /* Black outline */
+  border-radius: 4px;
+  background-color: #ffffff; /* White background */
   cursor: pointer;
+  position: relative;
+  display: block; /* Helps with vertical alignment */
 }
 
-.job-due-date {
-  text-align: right;
-  color: #000000; /* FORCE BLACK TEXT */
+/* Style for when the checkbox is checked */
+.status-checkbox-cell input:checked {
+  background-color: #000000; /* Fills black when checked */
 }
 
-/* Type Tags */
+/* Custom Checkmark (white dash/tick inside the black box) */
+.status-checkbox-cell input:checked::after {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 2px;
+  width: 5px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.job-link {
+  color: #000000;
+  text-decoration: underline;
+}
+
 .type-tag {
   padding: 0.25rem 0.75rem;
   border-radius: 6px;
@@ -185,17 +195,22 @@
 .type-tag.red { background-color: rgba(244, 67, 54, 0.15); color: #d32f2f; }
 .type-tag.green { background-color: rgba(76, 175, 80, 0.15); color: #388e3c; }
 
-/* Urgency Bar */
-.urgency-bar {
+/* Urgency Bar & Emoji Slider */
+.urgency-container {
   position: absolute;
-  right: 20px;
-  bottom: 2rem;
-  height: calc(100% - 10rem);
+  right: 25px;
+  top: 15rem; /* Made it shorter from the top */
+  bottom: 3rem;
   width: 14px;
-  background: linear-gradient(to bottom, 
-    #22c55e 0%, #84cc16 15%, #eab308 30%, 
-    #f59e0b 45%, #f97316 60%, #ef4444 75%, #dc2626 90%
-  );
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.urgency-bar {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(to top, #dc2626 0%, #facc15 50%, #22c55e 100%);
   border-radius: 10px;
 }
 .actions-header {
@@ -216,7 +231,7 @@
   border-radius: 6px;
   font-size: 13px;
   cursor: pointer;
-  transition: background 0.15s;
+  /* transition: background 0.15s; */
 }
 
 .edit-btn:hover {
@@ -274,4 +289,16 @@
 
 .edit-btn:hover {
   background: #e5e7eb;
+  position: relative;
+}
+
+.emoji-slider {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 1.5rem;
+  transition: bottom 0.5s ease-in-out;
+  z-index: 10;
+  white-space: nowrap;
+  pointer-events: none;
 }
