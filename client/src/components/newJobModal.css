@@ -1,0 +1,91 @@
+.njm-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.njm-card {
+  width: min(560px, 92vw);
+  background: #fff;
+  border: 2px solid #111;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+  padding: 22px;
+}
+
+.njm-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.njm-header h2 {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 500;
+}
+
+.njm-close {
+  background: transparent;
+  border: none;
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 6px 10px;
+}
+
+.njm-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.njm-label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 0.95rem;
+}
+
+.njm-input,
+.njm-textarea {
+  border: none;
+  background: #e9e9e9;
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 1rem;
+  outline: none;
+  color:black;
+}
+
+.njm-textarea {
+  min-height: 160px;
+  resize: vertical;
+}
+
+.njm-primary {
+  margin-top: 4px;
+  background: #00bcd4;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 14px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.njm-primary:hover {
+  filter: brightness(0.95);
+}
+
+.njm-optional {
+    font-size: 0.85rem;
+    opacity: 0.65;
+    font-weight: 400;
+  }
+  
