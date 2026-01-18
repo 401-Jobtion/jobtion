@@ -18,6 +18,15 @@ export default function ResumeEditorEnhanced() {
     categories: []
   });
 
+  const [savedInfo, setSavedInfo] = useState(() => {
+    const saved = localStorage.getItem("resume_saved_info");
+    return saved ? JSON.parse(saved) : {
+      experiences: [],
+      projects: [],
+      education: []
+    };
+});
+
   // --- Saved Versions Logic ---
   const [savedVersions, setSavedVersions] = useState(() => {
     const saved = localStorage.getItem("resume_saved_versions");
@@ -67,6 +76,54 @@ export default function ResumeEditorEnhanced() {
     return new Date(timestamp).toLocaleDateString();
   };
   // --- End Saved Versions Logic ---
+
+  // Save a block to Saved Info
+  const saveBlockToLibrary = (block, type) => {
+    const newSavedInfo = { ...savedInfo };
+    const blockWithId = { ...block, savedId: `saved-${Date.now()}` };
+    
+    if (type === 'experience') {
+      newSavedInfo.experiences = [...newSavedInfo.experiences, blockWithId];
+    } else if (type === 'project') {
+      newSavedInfo.projects = [...newSavedInfo.projects, blockWithId];
+    } else if (type === 'education') {
+      newSavedInfo.education = [...newSavedInfo.education, blockWithId];
+    }
+    
+    setSavedInfo(newSavedInfo);
+    localStorage.setItem("resume_saved_info", JSON.stringify(newSavedInfo));
+  };
+
+  // Load a saved block to active resume
+  const loadBlockFromLibrary = (savedBlock, type) => {
+    // Create new instance with new ID
+    const newBlock = { ...savedBlock, id: `${type}-${Date.now()}` };
+    delete newBlock.savedId;
+    
+    if (type === 'experience') {
+      setExperiences([...experiences, newBlock]);
+    } else if (type === 'project') {
+      setProjects([...projects, newBlock]);
+    } else if (type === 'education') {
+      setEducation([...education, newBlock]);
+    }
+  };
+
+  // Delete from saved library
+  const deleteSavedBlock = (savedId, type) => {
+    const newSavedInfo = { ...savedInfo };
+    
+    if (type === 'experience') {
+      newSavedInfo.experiences = newSavedInfo.experiences.filter(e => e.savedId !== savedId);
+    } else if (type === 'project') {
+      newSavedInfo.projects = newSavedInfo.projects.filter(p => p.savedId !== savedId);
+    } else if (type === 'education') {
+      newSavedInfo.education = newSavedInfo.education.filter(e => e.savedId !== savedId);
+    }
+    
+    setSavedInfo(newSavedInfo);
+    localStorage.setItem("resume_saved_info", JSON.stringify(newSavedInfo));
+  };
 
   const [draggedItem, setDraggedItem] = useState(null);
   const [jobUrl, setJobUrl] = useState("");
@@ -247,6 +304,7 @@ export default function ResumeEditorEnhanced() {
                   onDragStart={(e) => handleDragStart(e, exp, 'experience')}
                   onEdit={() => setEditingExperience(exp)}
                   onDelete={() => deleteItem(exp.id, 'experience')}
+                  onSave={() => saveBlockToLibrary(exp, 'experience')}  // ADD THIS LINE
                   title={exp.company || "Untitled"}
                   subtitle={exp.role || "No role"}
                 />
@@ -262,6 +320,7 @@ export default function ResumeEditorEnhanced() {
                   onDragStart={(e) => handleDragStart(e, proj, 'project')}
                   onEdit={() => setEditingProject(proj)}
                   onDelete={() => deleteItem(proj.id, 'project')}
+                  onSave={() => saveBlockToLibrary(proj, 'project')}  // ADD THIS LINE
                   title={proj.name || "Untitled"}
                   subtitle={proj.tech || "No tech"}
                 />
@@ -277,6 +336,7 @@ export default function ResumeEditorEnhanced() {
                   onDragStart={(e) => handleDragStart(e, edu, 'education')}
                   onEdit={() => setEditingEducation(edu)}
                   onDelete={() => deleteItem(edu.id, 'education')}
+                  onSave={() => saveBlockToLibrary(edu, 'education')}  // ADD THIS LINE
                   title={edu.school || "Untitled"}
                   subtitle={edu.degree || "No degree"}
                 />
@@ -540,7 +600,8 @@ export default function ResumeEditorEnhanced() {
             <div style={{
               background: "#3a3a3a",
               padding: "20px",
-              borderRadius: "8px"
+              borderRadius: "8px",
+              marginBottom: "20px"
             }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px" }}>
                 <h3 style={{ fontSize: "16px", margin: 0 }}>
@@ -604,6 +665,181 @@ export default function ResumeEditorEnhanced() {
                     </button>
                   </div>
                 ))
+              )}
+            </div>
+
+            {/* NEW: Saved Info Section */}
+            <div style={{
+              background: "#3a3a3a",
+              padding: "20px",
+              borderRadius: "8px"
+            }}>
+              <h3 style={{ fontSize: "16px", margin: "0 0 10px 0" }}>
+                📚 Saved Info
+              </h3>
+
+              {/* Experiences */}
+              {savedInfo.experiences.length > 0 && (
+                <div style={{ marginBottom: "20px" }}>
+                  <h4 style={{ fontSize: "13px", color: "#4CAF50", marginBottom: "10px", fontWeight: "600" }}>
+                    Experience
+                  </h4>
+                  {savedInfo.experiences.map((block) => (
+                    <div
+                      key={block.savedId}
+                      onClick={() => loadBlockFromLibrary(block, 'experience')}
+                      style={{
+                        background: "#2b2b2b",
+                        padding: "12px",
+                        borderRadius: "6px",
+                        marginBottom: "8px",
+                        cursor: "pointer",
+                        border: "1px solid #555",
+                        position: "relative",
+                        transition: "all 0.2s"
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = "#353535"}
+                      onMouseLeave={(e) => e.currentTarget.style.background = "#2b2b2b"}
+                    >
+                      <div style={{ fontSize: "13px", fontWeight: "500", marginBottom: "3px", color: "#fff", paddingRight: "25px" }}>
+                        {block.company || "Untitled"}
+                      </div>
+                      <div style={{ fontSize: "12px", color: "#aaa" }}>
+                        {block.role || "No role"}
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteSavedBlock(block.savedId, 'experience');
+                        }}
+                        style={{
+                          position: "absolute",
+                          right: "10px",
+                          top: "12px",
+                          background: "none",
+                          border: "none",
+                          color: "#f44336",
+                          cursor: "pointer",
+                          fontSize: "14px"
+                        }}
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Projects */}
+              {savedInfo.projects.length > 0 && (
+                <div style={{ marginBottom: "20px" }}>
+                  <h4 style={{ fontSize: "13px", color: "#4CAF50", marginBottom: "10px", fontWeight: "600" }}>
+                    Projects
+                  </h4>
+                  {savedInfo.projects.map((block) => (
+                    <div
+                      key={block.savedId}
+                      onClick={() => loadBlockFromLibrary(block, 'project')}
+                      style={{
+                        background: "#2b2b2b",
+                        padding: "12px",
+                        borderRadius: "6px",
+                        marginBottom: "8px",
+                        cursor: "pointer",
+                        border: "1px solid #555",
+                        position: "relative",
+                        transition: "all 0.2s"
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = "#353535"}
+                      onMouseLeave={(e) => e.currentTarget.style.background = "#2b2b2b"}
+                    >
+                      <div style={{ fontSize: "13px", fontWeight: "500", marginBottom: "3px", color: "#fff", paddingRight: "25px" }}>
+                        {block.name || "Untitled"}
+                      </div>
+                      <div style={{ fontSize: "12px", color: "#aaa" }}>
+                        {block.tech || "No tech"}
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteSavedBlock(block.savedId, 'project');
+                        }}
+                        style={{
+                          position: "absolute",
+                          right: "10px",
+                          top: "12px",
+                          background: "none",
+                          border: "none",
+                          color: "#f44336",
+                          cursor: "pointer",
+                          fontSize: "14px"
+                        }}
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Education */}
+              {savedInfo.education.length > 0 && (
+                <div style={{ marginBottom: "20px" }}>
+                  <h4 style={{ fontSize: "13px", color: "#4CAF50", marginBottom: "10px", fontWeight: "600" }}>
+                    Education
+                  </h4>
+                  {savedInfo.education.map((block) => (
+                    <div
+                      key={block.savedId}
+                      onClick={() => loadBlockFromLibrary(block, 'education')}
+                      style={{
+                        background: "#2b2b2b",
+                        padding: "12px",
+                        borderRadius: "6px",
+                        marginBottom: "8px",
+                        cursor: "pointer",
+                        border: "1px solid #555",
+                        position: "relative",
+                        transition: "all 0.2s"
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = "#353535"}
+                      onMouseLeave={(e) => e.currentTarget.style.background = "#2b2b2b"}
+                    >
+                      <div style={{ fontSize: "13px", fontWeight: "500", marginBottom: "3px", color: "#fff", paddingRight: "25px" }}>
+                        {block.school || "Untitled"}
+                      </div>
+                      <div style={{ fontSize: "12px", color: "#aaa" }}>
+                        {block.degree || "No degree"}
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteSavedBlock(block.savedId, 'education');
+                        }}
+                        style={{
+                          position: "absolute",
+                          right: "10px",
+                          top: "12px",
+                          background: "none",
+                          border: "none",
+                          color: "#f44336",
+                          cursor: "pointer",
+                          fontSize: "14px"
+                        }}
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {savedInfo.experiences.length === 0 && 
+              savedInfo.projects.length === 0 && 
+              savedInfo.education.length === 0 && (
+                <div style={{ textAlign: "center", color: "#888", fontSize: "13px", padding: "10px" }}>
+                  No saved blocks yet.
+                </div>
               )}
             </div>
           </>
@@ -1222,7 +1458,7 @@ function ModalActions({ onCancel, onSave }) {
   );
 }
 
-function DraggableItem({ item, type, onDragStart, onEdit, onDelete, title, subtitle }) {
+function DraggableItem({ item, type, onDragStart, onEdit, onDelete, onSave, title, subtitle }) {
   return (
     <div
       draggable
@@ -1249,6 +1485,20 @@ function DraggableItem({ item, type, onDragStart, onEdit, onDelete, title, subti
             {subtitle}
           </div>
         </div>
+        <button
+          onClick={onSave}
+          style={{
+            background: "none",
+            border: "none",
+            color: "#2196F3",
+            cursor: "pointer",
+            fontSize: "16px",
+            padding: "4px"
+          }}
+          title="Save to library"
+        >
+          💾
+        </button>
         <button
           onClick={onEdit}
           style={{
