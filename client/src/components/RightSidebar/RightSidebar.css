@@ -2,24 +2,30 @@
    RIGHT SIDEBAR POSITIONING
    ========================= */
 .right-sidebar {
-  position: fixed;
+  width: 320px;
+  min-width: 320px;
+  height: 100vh;
+  position: sticky;
   top: 0;
   right: 0;
-  width: 320px;
-  height: 100vh;
+
   background: #2b2b2b;
   color: #eaeaea;
+
   display: flex;
   flex-direction: column;
+
   border-left: 1px solid #3a3a3a;
-  transition: width 0.3s ease;
+  transition: width 0.3s ease, min-width 0.3s ease;
   z-index: 100;
 }
 
 .right-sidebar.collapsed {
   width: 60px;
+  min-width: 60px;
 }
 
+/* ... rest stays the same ... */
 .version-header {
   display: flex;
   justify-content: space-between;
