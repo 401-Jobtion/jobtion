@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
 import Home from "./pages/Home";
 import ResumeEditor from "./pages/ResumeEditor";
 
@@ -8,6 +8,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/resume" element={<ResumeEditor />} />
+        <Route path="/link" element={<Link/>} />
       </Routes>
     </BrowserRouter>
   );
