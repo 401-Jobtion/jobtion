@@ -1,8 +1,6 @@
-import { useState, useRef } from "react";
-import "./resume-editor.css"
-import "../components/LeftSidebar/LeftSidebar.css"
-import "../components/RightSidebar/RightSidebar.css";
-import "../components/SidebarBase.css";
+import { useState, useRef, useEffect } from "react";
+import PolygonBackground from "../components/PolygonBackground";
+import "./resume-editor.css";
 
 // Enhanced Resume Editor Component with AI Features
 export default function ResumeEditorEnhanced() {
@@ -60,6 +58,16 @@ export default function ResumeEditorEnhanced() {
   const [editingEducation, setEditingEducation] = useState(null);
   const [editingSkills, setEditingSkills] = useState(null);
   const [draggedItem, setDraggedItem] = useState(null);
+  
+  // Theme state - synced with localStorage
+  const [isDark, setIsDark] = useState(() => {
+    const saved = localStorage.getItem('jobtion-theme');
+    return saved !== 'light';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('jobtion-theme', isDark ? 'dark' : 'light');
+  }, [isDark]);
 
   // --- Upload Resume Handler ---
   const handleUploadResume = async (event) => {
@@ -213,32 +221,34 @@ export default function ResumeEditorEnhanced() {
     localStorage.setItem("resume_saved_info", JSON.stringify(newSavedInfo));
   };
 
-  const loadBlockFromLibrary = (savedBlock, type) => {
-    const newBlock = { ...savedBlock, id: `${type}-${Date.now()}` };
+  const loadBlockFromLibrary = (block, type) => {
+    const newBlock = { ...block, id: `${type}-${Date.now()}` };
     delete newBlock.savedId;
     
-    if (type === 'experience') setExperiences([...experiences, newBlock]);
-    else if (type === 'project') setProjects([...projects, newBlock]);
-    else if (type === 'education') setEducation([...education, newBlock]);
+    if (type === 'experience') {
+      setExperiences([...experiences, newBlock]);
+    } else if (type === 'project') {
+      setProjects([...projects, newBlock]);
+    } else if (type === 'education') {
+      setEducation([...education, newBlock]);
+    }
   };
 
   const deleteSavedBlock = (savedId, type) => {
     const newSavedInfo = { ...savedInfo };
-    
     if (type === 'experience') {
-      newSavedInfo.experiences = newSavedInfo.experiences.filter(e => e.savedId !== savedId);
+      newSavedInfo.experiences = newSavedInfo.experiences.filter(b => b.savedId !== savedId);
     } else if (type === 'project') {
-      newSavedInfo.projects = newSavedInfo.projects.filter(p => p.savedId !== savedId);
+      newSavedInfo.projects = newSavedInfo.projects.filter(b => b.savedId !== savedId);
     } else if (type === 'education') {
-      newSavedInfo.education = newSavedInfo.education.filter(e => e.savedId !== savedId);
+      newSavedInfo.education = newSavedInfo.education.filter(b => b.savedId !== savedId);
     }
-    
     setSavedInfo(newSavedInfo);
     localStorage.setItem("resume_saved_info", JSON.stringify(newSavedInfo));
   };
 
   const loadSkillSetFromLibrary = (skillSet) => {
-    setSkills({ id: skills.id, categories: skillSet.categories });
+    setSkills({ ...skillSet, id: 'skills-1' });
   };
 
   const deleteSavedSkillSet = (savedId) => {
@@ -250,12 +260,12 @@ export default function ResumeEditorEnhanced() {
   // --- Drag and Drop ---
   const handleDragStart = (e, item, type) => {
     setDraggedItem({ item, type });
-    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.effectAllowed = 'move';
   };
 
   const handleDragOver = (e) => {
     e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
+    e.dataTransfer.dropEffect = 'move';
   };
 
   const handleDrop = (e, targetIndex, type) => {
@@ -314,7 +324,6 @@ export default function ResumeEditorEnhanced() {
   };
 
   // --- Export PDF ---
-  // --- Export PDF ---
   const exportToPDF = async () => {
     const resumeElement = document.getElementById('resume-canvas');
     if (!resumeElement) {
@@ -339,7 +348,6 @@ export default function ResumeEditorEnhanced() {
         });
       }
 
-      // Save original styles
       const originalStyles = {
         width: resumeElement.style.width,
         minWidth: resumeElement.style.minWidth,
@@ -348,7 +356,6 @@ export default function ResumeEditorEnhanced() {
         boxShadow: resumeElement.style.boxShadow
       };
 
-      // Apply export styles
       resumeElement.style.width = '210mm';
       resumeElement.style.minWidth = '210mm';
       resumeElement.style.maxWidth = '210mm';
@@ -369,7 +376,6 @@ export default function ResumeEditorEnhanced() {
 
       await window.html2pdf().set(opt).from(resumeElement).save();
       
-      // Restore original styles
       resumeElement.style.width = originalStyles.width;
       resumeElement.style.minWidth = originalStyles.minWidth;
       resumeElement.style.maxWidth = originalStyles.maxWidth;
@@ -381,8 +387,23 @@ export default function ResumeEditorEnhanced() {
       alert('Failed to export PDF. Please try again.');
     }
   };
+
   return (
-    <div className="editor-wrapper">
+    <div className={`editor-wrapper ${isDark ? 'dark' : 'light'}`}>
+      {/* Animated Background */}
+      <PolygonBackground isDark={isDark} />
+
+      {/* Theme Toggle */}
+      <button 
+        className="theme-toggle" 
+        onClick={() => setIsDark(!isDark)}
+        style={{ right: rightCollapsed ? '80px' : '300px' }}
+      >
+        <div className={`toggle-slider ${isDark ? 'dark' : 'light'}`}>
+          {isDark ? '🌙' : '☀️'}
+        </div>
+      </button>
+
       {/* Left Sidebar */}
       <aside className={`left-sidebar ${leftCollapsed ? 'collapsed' : ''}`}>
         <div className="sidebar-header">
@@ -408,22 +429,6 @@ export default function ResumeEditorEnhanced() {
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isUploading}
                 className="upload-btn"
-                style={{
-                  width: "100%",
-                  padding: "14px",
-                  background: isUploading ? "#555" : "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "8px",
-                  cursor: isUploading ? "not-allowed" : "pointer",
-                  fontSize: "14px",
-                  fontWeight: "600",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "8px",
-                  boxShadow: "0 2px 8px rgba(102, 126, 234, 0.3)"
-                }}
               >
                 {isUploading ? (
                   <>
@@ -435,16 +440,7 @@ export default function ResumeEditorEnhanced() {
                 )}
               </button>
               {uploadError && (
-                <div className="error-message" style={{
-                  marginTop: "8px",
-                  padding: "8px 12px",
-                  background: "#f44336",
-                  color: "white",
-                  borderRadius: "4px",
-                  fontSize: "12px"
-                }}>
-                  {uploadError}
-                </div>
+                <div className="error-message">{uploadError}</div>
               )}
             </div>
 
@@ -453,35 +449,16 @@ export default function ResumeEditorEnhanced() {
               <h3>Profile</h3>
               <button
                 onClick={() => setShowProfileEdit(true)}
-                style={{
-                  width: "100%",
-                  padding: "12px",
-                  background: "#4CAF50",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "6px",
-                  cursor: "pointer",
-                  fontSize: "14px",
-                  fontWeight: "500",
-                  marginBottom: "10px"
-                }}
+                className="action-btn primary"
               >
                 {profile.name ? "Edit Profile" : "Add Profile"}
               </button>
-              {profile.name && (
-                <div className="profile-item">
-                  <div className="profile-text">
-                    <span className="profile-name">{profile.name}</span>
-                    <small>{profile.email}</small>
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* Experience Section */}
             <div className="sidebar-section">
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
-                <h3 style={{ margin: 0 }}>Experience</h3>
+              <div className="section-header">
+                <h3>Experience</h3>
                 <button onClick={addNewExperience} className="add-version-btn">+</button>
               </div>
               {experiences.map((exp) => (
@@ -501,8 +478,8 @@ export default function ResumeEditorEnhanced() {
 
             {/* Projects Section */}
             <div className="sidebar-section">
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
-                <h3 style={{ margin: 0 }}>Projects</h3>
+              <div className="section-header">
+                <h3>Projects</h3>
                 <button onClick={addNewProject} className="add-version-btn">+</button>
               </div>
               {projects.map((proj) => (
@@ -522,8 +499,8 @@ export default function ResumeEditorEnhanced() {
 
             {/* Education Section */}
             <div className="sidebar-section">
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
-                <h3 style={{ margin: 0 }}>Education</h3>
+              <div className="section-header">
+                <h3>Education</h3>
                 <button onClick={addNewEducation} className="add-version-btn">+</button>
               </div>
               {education.map((edu) => (
@@ -546,17 +523,7 @@ export default function ResumeEditorEnhanced() {
               <h3>Skills</h3>
               <button
                 onClick={() => setEditingSkills(skills)}
-                style={{
-                  width: "100%",
-                  padding: "12px",
-                  background: "#4CAF50",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "6px",
-                  cursor: "pointer",
-                  fontSize: "14px",
-                  fontWeight: "500"
-                }}
+                className="action-btn primary"
               >
                 {skills.categories.length > 0 ? "Edit Skills" : "Add Skills"}
               </button>
@@ -600,7 +567,7 @@ export default function ResumeEditorEnhanced() {
                     <span>{exp.start} {exp.end && `– ${exp.end}`}</span>
                   </div>
                   {exp.role && <div className="resume-item-role">{exp.role}</div>}
-                  {exp.bullets.length > 0 && exp.bullets[0] && (
+                  {exp.bullets?.length > 0 && (
                     <ul>
                       {exp.bullets.filter(b => b).map((bullet, i) => (
                         <li key={i}>{bullet}</li>
@@ -627,9 +594,9 @@ export default function ResumeEditorEnhanced() {
                 >
                   <div className="resume-item-header">
                     <strong>{proj.name}</strong>
-                    {proj.tech && <span>| {proj.tech}</span>}
+                    {proj.tech && <span style={{ color: "#666" }}>{proj.tech}</span>}
                   </div>
-                  {proj.bullets.length > 0 && proj.bullets[0] && (
+                  {proj.bullets?.length > 0 && (
                     <ul>
                       {proj.bullets.filter(b => b).map((bullet, i) => (
                         <li key={i}>{bullet}</li>
@@ -695,32 +662,14 @@ export default function ResumeEditorEnhanced() {
         {!rightCollapsed && (
           <div className="sidebar-content">
             {/* Export PDF Button */}
-            <button
-              onClick={exportToPDF}
-              style={{
-                width: "100%",
-                padding: "15px",
-                background: "#4CAF50",
-                color: "white",
-                border: "none",
-                borderRadius: "8px",
-                cursor: "pointer",
-                fontSize: "16px",
-                fontWeight: "600",
-                marginBottom: "20px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "10px"
-              }}
-            >
+            <button onClick={exportToPDF} className="action-btn export">
               📄 Export to PDF
             </button>
 
             {/* AI Optimize Section */}
-            <div className="sidebar-section" style={{ background: "#3a3a3a", padding: "16px", borderRadius: "8px", marginBottom: "20px" }}>
-              <h3 style={{ fontSize: "16px", marginTop: 0, marginBottom: "12px" }}>🤖 Optimize for Job</h3>
-              <p style={{ fontSize: "13px", color: "#bbb", marginBottom: "12px" }}>
+            <div className="sidebar-section ai-section">
+              <h3>🤖 Optimize for Job</h3>
+              <p className="section-description">
                 Paste a job posting URL and AI will tailor your resume to match.
               </p>
               <input
@@ -731,35 +680,13 @@ export default function ResumeEditorEnhanced() {
                   setJobUrl(e.target.value);
                   setOptimizeError(null);
                 }}
-                style={{
-                  width: "100%",
-                  padding: "10px",
-                  marginBottom: "10px",
-                  background: "#2b2b2b",
-                  border: "1px solid #555",
-                  color: "#fff",
-                  borderRadius: "4px",
-                  boxSizing: "border-box"
-                }}
+                className="input-field"
               />
               <button
                 onClick={optimizeForJob}
                 disabled={isOptimizing}
-                style={{
-                  width: "100%",
-                  padding: "12px",
-                  background: isOptimizing ? "#555" : "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "4px",
-                  cursor: isOptimizing ? "not-allowed" : "pointer",
-                  fontSize: "14px",
-                  fontWeight: "600",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "8px"
-                }}
+                className="upload-btn"
+                style={{ marginTop: '10px' }}
               >
                 {isOptimizing ? (
                   <>
@@ -772,61 +699,45 @@ export default function ResumeEditorEnhanced() {
               </button>
               
               {optimizeError && (
-                <div style={{
-                  marginTop: "10px",
-                  padding: "10px 12px",
-                  background: "#f44336",
-                  color: "white",
-                  borderRadius: "4px",
-                  fontSize: "12px"
-                }}>
-                  {optimizeError}
-                </div>
+                <div className="error-message">{optimizeError}</div>
               )}
 
               {lastJobDetails && (
-                <div style={{
-                  marginTop: "12px",
-                  padding: "12px",
-                  background: "#2b2b2b",
-                  borderRadius: "6px",
-                  fontSize: "12px"
-                }}>
-                  <div style={{ color: "#4CAF50", fontWeight: "600", marginBottom: "6px" }}>✓ Optimized for:</div>
-                  <div style={{ color: "#fff", fontWeight: "500" }}>{lastJobDetails.title}</div>
-                  <div style={{ color: "#aaa" }}>{lastJobDetails.company}</div>
+                <div className="success-card">
+                  <div className="success-label">✓ Optimized for:</div>
+                  <div className="success-title">{lastJobDetails.title}</div>
+                  <div className="success-subtitle">{lastJobDetails.company}</div>
                 </div>
               )}
             </div>
 
             {/* Saved Versions */}
-            <div className="sidebar-section" style={{ background: "#3a3a3a", padding: "16px", borderRadius: "8px", marginBottom: "20px" }}>
+            <div className="sidebar-section">
               <div className="version-header">
-                <h3 style={{ fontSize: "16px", margin: 0 }}>💾 Saved Versions</h3>
+                <h3>💾 Saved Versions</h3>
                 <button className="add-version-btn" onClick={saveCurrentVersion}>+</button>
               </div>
 
               {savedVersions.length === 0 ? (
                 <div className="empty-state">No saved versions yet.</div>
               ) : (
-                savedVersions.map(version => (
+                savedVersions.map((version) => (
                   <div key={version.id} className="version-card" onClick={() => loadVersion(version)}>
                     <span className="version-name">{version.name}</span>
                     <span className="version-time">{getTimeAgo(version.timestamp)}</span>
-                    <button className="delete-version-btn" onClick={(e) => deleteVersion(e, version.id)}>🗑️</button>
+                    <button className="delete-version-btn" onClick={(e) => deleteVersion(e, version.id)}>✕</button>
                   </div>
                 ))
               )}
             </div>
 
-            {/* Saved Info Section */}
-            <div className="sidebar-section" style={{ background: "#3a3a3a", padding: "16px", borderRadius: "8px" }}>
-              <h3 style={{ fontSize: "16px", margin: "0 0 12px 0" }}>📚 Saved Info</h3>
-
-              {/* Saved Experiences */}
+            {/* Saved Library */}
+            <div className="sidebar-section">
+              <h3>📚 Saved Library</h3>
+              
               {savedInfo.experiences.length > 0 && (
-                <div style={{ marginBottom: "16px" }}>
-                  <h4 style={{ fontSize: "13px", color: "#4CAF50", marginBottom: "8px" }}>Experience</h4>
+                <div className="library-section">
+                  <h4>Experience</h4>
                   {savedInfo.experiences.map((block) => (
                     <div key={block.savedId} className="version-card" onClick={() => loadBlockFromLibrary(block, 'experience')}>
                       <span className="version-name">{block.company || "Untitled"}</span>
@@ -837,10 +748,9 @@ export default function ResumeEditorEnhanced() {
                 </div>
               )}
 
-              {/* Saved Projects */}
               {savedInfo.projects.length > 0 && (
-                <div style={{ marginBottom: "16px" }}>
-                  <h4 style={{ fontSize: "13px", color: "#4CAF50", marginBottom: "8px" }}>Projects</h4>
+                <div className="library-section">
+                  <h4>Projects</h4>
                   {savedInfo.projects.map((block) => (
                     <div key={block.savedId} className="version-card" onClick={() => loadBlockFromLibrary(block, 'project')}>
                       <span className="version-name">{block.name || "Untitled"}</span>
@@ -851,10 +761,9 @@ export default function ResumeEditorEnhanced() {
                 </div>
               )}
 
-              {/* Saved Education */}
               {savedInfo.education.length > 0 && (
-                <div style={{ marginBottom: "16px" }}>
-                  <h4 style={{ fontSize: "13px", color: "#4CAF50", marginBottom: "8px" }}>Education</h4>
+                <div className="library-section">
+                  <h4>Education</h4>
                   {savedInfo.education.map((block) => (
                     <div key={block.savedId} className="version-card" onClick={() => loadBlockFromLibrary(block, 'education')}>
                       <span className="version-name">{block.school || "Untitled"}</span>
@@ -865,10 +774,9 @@ export default function ResumeEditorEnhanced() {
                 </div>
               )}
 
-              {/* Saved Skills */}
               {savedSkillSets.length > 0 && (
-                <div style={{ marginBottom: "16px" }}>
-                  <h4 style={{ fontSize: "13px", color: "#4CAF50", marginBottom: "8px" }}>Skills</h4>
+                <div className="library-section">
+                  <h4>Skills</h4>
                   {savedSkillSets.map((skillSet) => (
                     <div key={skillSet.savedId} className="version-card" onClick={() => loadSkillSetFromLibrary(skillSet)}>
                       <span className="version-name">{skillSet.name}</span>
@@ -889,21 +797,6 @@ export default function ResumeEditorEnhanced() {
           </div>
         )}
       </aside>
-
-      {/* Spinner CSS */}
-      <style>{`
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
-        .spinner {
-          width: 14px;
-          height: 14px;
-          border: 2px solid #fff;
-          border-top-color: transparent;
-          border-radius: 50%;
-          animation: spin 1s linear infinite;
-        }
-      `}</style>
 
       {/* Modals */}
       {showProfileEdit && (
@@ -975,17 +868,18 @@ function DraggableItem({ item, type, onDragStart, onEdit, onDelete, onSave, titl
     <div
       draggable
       onDragStart={onDragStart}
-      className="profile-item"
-      style={{ cursor: "move" }}
+      className="draggable-item"
     >
       <div className="drag-handle">⋮⋮</div>
-      <div className="profile-text">
-        <span className="profile-name">{title}</span>
-        <small>{subtitle}</small>
+      <div className="item-text">
+        <span className="item-title">{title}</span>
+        <span className="item-subtitle">{subtitle}</span>
       </div>
-      <button onClick={onSave} className="edit-btn" style={{ opacity: 1, color: "#2196F3" }} title="Save">💾</button>
-      <button onClick={onEdit} className="edit-btn" style={{ opacity: 1, color: "#4CAF50" }} title="Edit">✏️</button>
-      <button onClick={onDelete} className="edit-btn" style={{ opacity: 1, color: "#f44336" }} title="Delete">🗑️</button>
+      <div className="item-actions">
+        <button onClick={onSave} className="save-btn" title="Save to Library">💾</button>
+        <button onClick={onEdit} className="edit-btn" title="Edit">✏️</button>
+        <button onClick={onDelete} className="delete-btn" title="Delete">🗑️</button>
+      </div>
     </div>
   );
 }
@@ -1004,22 +898,13 @@ function ModalBackdrop({ onClose, children }) {
 
 function Input({ label, value, onChange, placeholder }) {
   return (
-    <div style={{ marginBottom: "15px" }}>
-      <label style={{ display: "block", marginBottom: "8px", color: "#ccc", fontSize: "14px" }}>{label}</label>
+    <div className="input-group">
+      <label>{label}</label>
       <input
         value={value}
         onChange={onChange}
         placeholder={placeholder}
-        style={{
-          width: "100%",
-          padding: "10px",
-          background: "#1f1f1f",
-          border: "1px solid #444",
-          color: "#fff",
-          borderRadius: "6px",
-          fontSize: "14px",
-          boxSizing: "border-box"
-        }}
+        className="modal-input"
       />
     </div>
   );
@@ -1028,8 +913,8 @@ function Input({ label, value, onChange, placeholder }) {
 function ModalActions({ onCancel, onSave }) {
   return (
     <div className="modal-actions">
-      <button onClick={onCancel} style={{ padding: "10px 20px", background: "#444", color: "white", border: "none", borderRadius: "6px", cursor: "pointer" }}>Cancel</button>
-      <button onClick={onSave} style={{ padding: "10px 20px", background: "#4CAF50", color: "white", border: "none", borderRadius: "6px", cursor: "pointer", fontWeight: "500" }}>Save</button>
+      <button onClick={onCancel} className="btn-cancel">Cancel</button>
+      <button onClick={onSave} className="btn-save">Save</button>
     </div>
   );
 }
@@ -1070,15 +955,26 @@ function ExperienceModal({ experience, onSave, onClose }) {
           <Input label="Start Date" value={formData.start} onChange={(e) => setFormData({...formData, start: e.target.value})} placeholder="Jan 2022" />
           <Input label="End Date" value={formData.end} onChange={(e) => setFormData({...formData, end: e.target.value})} placeholder="Present" />
         </div>
-        <div style={{ marginBottom: "15px" }}>
-          <label style={{ display: "block", marginBottom: "8px", color: "#ccc", fontSize: "14px" }}>Achievements</label>
+        <div className="bullets-section">
+          <label>Achievements</label>
           {formData.bullets.map((bullet, i) => (
-            <div key={i} style={{ display: "flex", gap: "10px", marginBottom: "8px" }}>
-              <input value={bullet} onChange={(e) => updateBullet(i, e.target.value)} placeholder={`Achievement ${i + 1}`} style={{ flex: 1, padding: "10px", background: "#1f1f1f", border: "1px solid #444", color: "#fff", borderRadius: "6px" }} />
-              <button onClick={() => setFormData({...formData, bullets: formData.bullets.filter((_, idx) => idx !== i)})} style={{ background: "#f44336", color: "white", border: "none", padding: "0 12px", borderRadius: "6px", cursor: "pointer" }}>−</button>
+            <div key={i} className="bullet-row">
+              <input 
+                value={bullet} 
+                onChange={(e) => updateBullet(i, e.target.value)} 
+                placeholder={`Achievement ${i + 1}`}
+                className="modal-input"
+              />
+              <button 
+                onClick={() => setFormData({...formData, bullets: formData.bullets.filter((_, idx) => idx !== i)})}
+                className="btn-remove"
+              >−</button>
             </div>
           ))}
-          <button onClick={() => setFormData({...formData, bullets: [...formData.bullets, ""]})} style={{ background: "#4CAF50", color: "white", border: "none", padding: "8px 16px", borderRadius: "6px", cursor: "pointer" }}>+ Add</button>
+          <button 
+            onClick={() => setFormData({...formData, bullets: [...formData.bullets, ""]})}
+            className="btn-add"
+          >+ Add Achievement</button>
         </div>
         <ModalActions onCancel={onClose} onSave={() => onSave(formData)} />
       </div>
@@ -1099,17 +995,28 @@ function ProjectModal({ project, onSave, onClose }) {
     <ModalBackdrop onClose={onClose}>
       <div className="modal" style={{ width: "500px" }}>
         <h3>{project.name ? "Edit Project" : "Add Project"}</h3>
-        <Input label="Project Name" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} placeholder="AI Resume Builder" />
-        <Input label="Technologies" value={formData.tech} onChange={(e) => setFormData({...formData, tech: e.target.value})} placeholder="React, Node.js, OpenAI" />
-        <div style={{ marginBottom: "15px" }}>
-          <label style={{ display: "block", marginBottom: "8px", color: "#ccc", fontSize: "14px" }}>Details</label>
+        <Input label="Project Name" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} placeholder="My Awesome Project" />
+        <Input label="Technologies" value={formData.tech} onChange={(e) => setFormData({...formData, tech: e.target.value})} placeholder="React, Node.js, PostgreSQL" />
+        <div className="bullets-section">
+          <label>Key Points</label>
           {formData.bullets.map((bullet, i) => (
-            <div key={i} style={{ display: "flex", gap: "10px", marginBottom: "8px" }}>
-              <input value={bullet} onChange={(e) => updateBullet(i, e.target.value)} placeholder={`Detail ${i + 1}`} style={{ flex: 1, padding: "10px", background: "#1f1f1f", border: "1px solid #444", color: "#fff", borderRadius: "6px" }} />
-              <button onClick={() => setFormData({...formData, bullets: formData.bullets.filter((_, idx) => idx !== i)})} style={{ background: "#f44336", color: "white", border: "none", padding: "0 12px", borderRadius: "6px", cursor: "pointer" }}>−</button>
+            <div key={i} className="bullet-row">
+              <input 
+                value={bullet} 
+                onChange={(e) => updateBullet(i, e.target.value)} 
+                placeholder={`Point ${i + 1}`}
+                className="modal-input"
+              />
+              <button 
+                onClick={() => setFormData({...formData, bullets: formData.bullets.filter((_, idx) => idx !== i)})}
+                className="btn-remove"
+              >−</button>
             </div>
           ))}
-          <button onClick={() => setFormData({...formData, bullets: [...formData.bullets, ""]})} style={{ background: "#4CAF50", color: "white", border: "none", padding: "8px 16px", borderRadius: "6px", cursor: "pointer" }}>+ Add</button>
+          <button 
+            onClick={() => setFormData({...formData, bullets: [...formData.bullets, ""]})}
+            className="btn-add"
+          >+ Add Point</button>
         </div>
         <ModalActions onCancel={onClose} onSave={() => onSave(formData)} />
       </div>
@@ -1119,14 +1026,15 @@ function ProjectModal({ project, onSave, onClose }) {
 
 function EducationModal({ education, onSave, onClose }) {
   const [formData, setFormData] = useState(education);
+
   return (
     <ModalBackdrop onClose={onClose}>
-      <div className="modal" style={{ width: "400px" }}>
+      <div className="modal" style={{ width: "450px" }}>
         <h3>{education.school ? "Edit Education" : "Add Education"}</h3>
-        <Input label="School" value={formData.school} onChange={(e) => setFormData({...formData, school: e.target.value})} placeholder="University of Alberta" />
-        <Input label="Degree" value={formData.degree} onChange={(e) => setFormData({...formData, degree: e.target.value})} placeholder="B.Sc. Computer Science" />
-        <Input label="Period" value={formData.period} onChange={(e) => setFormData({...formData, period: e.target.value})} placeholder="2018 - 2022" />
-        <Input label="GPA (Optional)" value={formData.gpa} onChange={(e) => setFormData({...formData, gpa: e.target.value})} placeholder="3.8/4.0" />
+        <Input label="School" value={formData.school} onChange={(e) => setFormData({...formData, school: e.target.value})} placeholder="MIT" />
+        <Input label="Degree" value={formData.degree} onChange={(e) => setFormData({...formData, degree: e.target.value})} placeholder="B.S. Computer Science" />
+        <Input label="Time Period" value={formData.period} onChange={(e) => setFormData({...formData, period: e.target.value})} placeholder="2018 - 2022" />
+        <Input label="GPA (optional)" value={formData.gpa} onChange={(e) => setFormData({...formData, gpa: e.target.value})} placeholder="3.8" />
         <ModalActions onCancel={onClose} onSave={() => onSave(formData)} />
       </div>
     </ModalBackdrop>
@@ -1136,43 +1044,79 @@ function EducationModal({ education, onSave, onClose }) {
 function SkillsModal({ skills, savedSkillSets, setSavedSkillSets, onSave, onClose }) {
   const [formData, setFormData] = useState(skills);
 
+  const addCategory = () => {
+    setFormData({
+      ...formData,
+      categories: [...formData.categories, { name: "", items: [] }]
+    });
+  };
+
   const updateCategory = (index, field, value) => {
     const newCategories = [...formData.categories];
-    newCategories[index] = {...newCategories[index], [field]: value};
-    setFormData({...formData, categories: newCategories});
+    if (field === 'items') {
+      newCategories[index].items = value.split(',').map(s => s.trim()).filter(s => s);
+    } else {
+      newCategories[index][field] = value;
+    }
+    setFormData({ ...formData, categories: newCategories });
+  };
+
+  const removeCategory = (index) => {
+    setFormData({
+      ...formData,
+      categories: formData.categories.filter((_, i) => i !== index)
+    });
+  };
+
+  const saveAsSkillSet = () => {
+    const name = prompt("Enter a name for this skill set:", `Skill Set ${savedSkillSets.length + 1}`);
+    if (!name) return;
+
+    const newSkillSet = {
+      ...formData,
+      savedId: `skillset-${Date.now()}`,
+      name: name
+    };
+
+    const updated = [...savedSkillSets, newSkillSet];
+    setSavedSkillSets(updated);
+    localStorage.setItem("resume_saved_skillsets", JSON.stringify(updated));
   };
 
   return (
     <ModalBackdrop onClose={onClose}>
-      <div className="modal" style={{ width: "500px" }}>
+      <div className="modal" style={{ width: "550px" }}>
         <h3>Edit Skills</h3>
+        
         {formData.categories.map((cat, i) => (
-          <div key={i} style={{ marginBottom: "15px", padding: "12px", background: "#1f1f1f", borderRadius: "8px" }}>
-            <div style={{ display: "flex", gap: "10px", marginBottom: "8px" }}>
-              <input value={cat.name} onChange={(e) => updateCategory(i, 'name', e.target.value)} placeholder="Category" style={{ flex: 1, padding: "10px", background: "#2b2b2b", border: "1px solid #444", color: "#fff", borderRadius: "6px" }} />
-              <button onClick={() => setFormData({...formData, categories: formData.categories.filter((_, idx) => idx !== i)})} style={{ background: "#f44336", color: "white", border: "none", padding: "0 12px", borderRadius: "6px", cursor: "pointer" }}>🗑️</button>
+          <div key={i} className="skill-category">
+            <div className="skill-category-header">
+              <input
+                value={cat.name}
+                onChange={(e) => updateCategory(i, 'name', e.target.value)}
+                placeholder="Category name (e.g., Languages)"
+                className="modal-input"
+                style={{ flex: 1 }}
+              />
+              <button onClick={() => removeCategory(i)} className="btn-remove">✕</button>
             </div>
-            <input value={cat.items.join(", ")} onChange={(e) => updateCategory(i, 'items', e.target.value.split(",").map(s => s.trim()))} placeholder="Skills (comma-separated)" style={{ width: "100%", padding: "10px", background: "#2b2b2b", border: "1px solid #444", color: "#fff", borderRadius: "6px", boxSizing: "border-box" }} />
+            <input
+              value={cat.items.join(', ')}
+              onChange={(e) => updateCategory(i, 'items', e.target.value)}
+              placeholder="Skills (comma-separated)"
+              className="modal-input"
+            />
           </div>
         ))}
-        <button onClick={() => setFormData({...formData, categories: [...formData.categories, { name: "", items: [] }]})} style={{ width: "100%", background: "#4CAF50", color: "white", border: "none", padding: "10px", borderRadius: "6px", cursor: "pointer", marginBottom: "15px" }}>+ Add Category</button>
-        <div style={{ display: "flex", justifyContent: "space-between" }}>
-          <button
-            onClick={() => {
-              if (formData.categories.length === 0) { alert("No skills to save."); return; }
-              const name = prompt("Enter a name for this skill set:", "Skills Set");
-              if (!name) return;
-              const newSet = { savedId: `skillset-${Date.now()}`, name, categories: formData.categories };
-              const updated = [newSet, ...savedSkillSets];
-              setSavedSkillSets(updated);
-              localStorage.setItem("resume_saved_skillsets", JSON.stringify(updated));
-              alert(`Saved "${name}"!`);
-            }}
-            style={{ padding: "10px 16px", background: "#2196F3", color: "white", border: "none", borderRadius: "6px", cursor: "pointer" }}
-          >
-            💾 Remember
-          </button>
-          <ModalActions onCancel={onClose} onSave={() => onSave(formData)} />
+
+        <button onClick={addCategory} className="btn-add" style={{ marginTop: '12px' }}>
+          + Add Category
+        </button>
+
+        <div className="modal-actions">
+          <button onClick={saveAsSkillSet} className="btn-secondary">Save to Library</button>
+          <button onClick={onClose} className="btn-cancel">Cancel</button>
+          <button onClick={() => onSave(formData)} className="btn-save">Save</button>
         </div>
       </div>
     </ModalBackdrop>

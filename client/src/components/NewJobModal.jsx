@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { generateId } from "../lib/storage";
+import PolygonBackground from "./PolygonBackground";
 import "./newJobModal.css";
 
 export default function NewJobModal({ open, onClose, onCreate }) {
@@ -16,6 +17,23 @@ export default function NewJobModal({ open, onClose, onCreate }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // Get theme from localStorage (synced with rest of app)
+  const [isDark, setIsDark] = useState(() => {
+    const saved = localStorage.getItem('jobtion-theme');
+    return saved !== 'light';
+  });
+
+  // Listen for theme changes
+  useEffect(() => {
+    const checkTheme = () => {
+      const saved = localStorage.getItem('jobtion-theme');
+      setIsDark(saved !== 'light');
+    };
+    
+    window.addEventListener('storage', checkTheme);
+    return () => window.removeEventListener('storage', checkTheme);
+  }, []);
+
   useEffect(() => {
     if (open) {
       setUrl("");
@@ -28,6 +46,10 @@ export default function NewJobModal({ open, onClose, onCreate }) {
       setDueDate("");
       setJobType("");
       setError("");
+      
+      // Re-check theme when modal opens
+      const saved = localStorage.getItem('jobtion-theme');
+      setIsDark(saved !== 'light');
     }
   }, [open]);
 
@@ -106,7 +128,10 @@ export default function NewJobModal({ open, onClose, onCreate }) {
   };
 
   return (
-    <div className="njm-fullscreen">
+    <div className={`njm-fullscreen ${isDark ? 'dark' : 'light'}`}>
+      {/* Animated Background */}
+      <PolygonBackground isDark={isDark} />
+
       {/* Header */}
       <div className="njm-header">
         <h1>Add New Job</h1>
