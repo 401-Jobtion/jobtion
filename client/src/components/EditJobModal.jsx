@@ -1,7 +1,7 @@
 // src/components/EditJobModal.jsx
 import { useEffect, useState, useRef } from "react";
 import { getStoredResume, saveResume } from "../lib/storage";
-import "./editJobModal.css";
+import "./EditJobModal.css";
 
 export default function EditJobModal({ open, job, onClose, onUpdate, onDelete }) {
   const [url, setUrl] = useState("");
