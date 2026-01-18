@@ -130,10 +130,11 @@
 }
 
 /* =========================
-   EDIT BUTTON
+   EDIT BUTTON (SCOPED TO LEFT SIDEBAR)
    ========================= */
 
-.edit-btn {
+/* Scoped to left-sidebar to avoid affecting Home page edit buttons */
+.left-sidebar .edit-btn {
   opacity: 0;
   background: none;
   border: none;
@@ -143,11 +144,11 @@
   transition: opacity 0.15s ease;
 }
 
-.profile-item:hover .edit-btn {
+.left-sidebar .profile-item:hover .edit-btn {
   opacity: 1;
 }
 
-.edit-btn:hover {
+.left-sidebar .edit-btn:hover {
   color: #fff;
 }
 

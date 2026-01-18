@@ -91,49 +91,18 @@ function PolygonBackground({ isDark }) {
       // Draw connections between nearby dots
       ctx.strokeStyle = isDark ? 'rgba(96, 165, 250, 0.15)' : 'rgba(59, 130, 246, 0.15)';
       ctx.lineWidth = 1;
-
       for (let i = 0; i < dotsRef.current.length; i++) {
         for (let j = i + 1; j < dotsRef.current.length; j++) {
-          const dot1 = dotsRef.current[i];
-          const dot2 = dotsRef.current[j];
-          const dx = dot2.x - dot1.x;
-          const dy = dot2.y - dot1.y;
+          const dx = dotsRef.current[i].x - dotsRef.current[j].x;
+          const dy = dotsRef.current[i].y - dotsRef.current[j].y;
           const dist = Math.sqrt(dx * dx + dy * dy);
-
           if (dist < connectionDistance) {
-            const opacity = 1 - dist / connectionDistance;
-            ctx.strokeStyle = isDark 
-              ? `rgba(96, 165, 250, ${opacity * 0.3})` 
-              : `rgba(59, 130, 246, ${opacity * 0.3})`;
             ctx.beginPath();
-            ctx.moveTo(dot1.x, dot1.y);
-            ctx.lineTo(dot2.x, dot2.y);
+            ctx.moveTo(dotsRef.current[i].x, dotsRef.current[i].y);
+            ctx.lineTo(dotsRef.current[j].x, dotsRef.current[j].y);
             ctx.stroke();
           }
         }
-      }
-
-      // Create polygons when mouse is near dots
-      const nearbyDots = dotsRef.current.filter(dot => {
-        const dx = mouseRef.current.x - dot.x;
-        const dy = mouseRef.current.y - dot.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        return dist < 100;
-      });
-
-      if (nearbyDots.length >= 3) {
-        ctx.fillStyle = isDark ? 'rgba(96, 165, 250, 0.05)' : 'rgba(59, 130, 246, 0.05)';
-        ctx.strokeStyle = isDark ? 'rgba(96, 165, 250, 0.3)' : 'rgba(59, 130, 246, 0.3)';
-        ctx.lineWidth = 1.5;
-        
-        ctx.beginPath();
-        ctx.moveTo(nearbyDots[0].x, nearbyDots[0].y);
-        for (let i = 1; i < nearbyDots.length; i++) {
-          ctx.lineTo(nearbyDots[i].x, nearbyDots[i].y);
-        }
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
       }
 
       animationRef.current = requestAnimationFrame(animate);
@@ -169,11 +138,7 @@ function PolygonBackground({ isDark }) {
 // Theme Toggle Component
 function ThemeToggle({ isDark, onToggle }) {
   return (
-    <button
-      onClick={onToggle}
-      className="theme-toggle"
-      aria-label="Toggle theme"
-    >
+    <button className="theme-toggle" onClick={onToggle}>
       <div className={`toggle-slider ${isDark ? 'dark' : 'light'}`}>
         {isDark ? '🌙' : '☀️'}
       </div>
@@ -194,15 +159,9 @@ function Home() {
   });
 
   useEffect(() => {
+    // Load jobs from storage - no hardcoded defaults
     const storedJobs = getJobs();
-    if (storedJobs.length > 0) {
-      setJobs(storedJobs);
-    } else {
-      setJobs([
-        { id: 'job-1', title: 'Google SWE', url: '', description: '', requirements: [], type: 'SWE', typeColor: 'red', dueDate: 'February 28, 2025', status: 'Applied', company: 'Google', location: '', salary: '', notes: '', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-        { id: 'job-2', title: 'Data Analyst TD', url: '', description: '', requirements: [], type: 'Data', typeColor: 'green', dueDate: 'March 1, 2025', status: 'Applied', company: 'TD Bank', location: '', salary: '', notes: '', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-      ]);
-    }
+    setJobs(storedJobs);
     setIsLoaded(true);
   }, []);
 
@@ -330,40 +289,48 @@ function Home() {
               </tr>
             </thead>
             <tbody>
-              {filteredJobs.map(job => (
-                <tr key={job.id}>
-                  <td className="job-title">
-                    {job.url ? (
-                      <a href={job.url} target="_blank" rel="noreferrer" className="job-link">
-                        {job.title}
-                      </a>
-                    ) : (
-                      job.title
-                    )}
-                  </td>
-                  <td className="job-type">
-                    {job.type && <span className={`type-tag ${job.typeColor}`}>{job.type}</span>}
-                  </td>
-                  <td className="job-due-date">{job.dueDate}</td>
-                  <td className="job-actions">
-                    <button className="edit-btn" onClick={() => handleEditClick(job)}>Edit</button>
-                  </td>
-                  <td className="status-checkbox-cell">
-                    <input 
-                      type="checkbox" 
-                      checked={job.status === 'Interview' || job.status === 'Accepted'}
-                      onChange={(e) => handleStatusChange(job.id, 'Interview', e.target.checked)}
-                    />
-                  </td>
-                  <td className="status-checkbox-cell">
-                    <input 
-                      type="checkbox" 
-                      checked={job.status === 'Accepted'}
-                      onChange={(e) => handleStatusChange(job.id, 'Accepted', e.target.checked)}
-                    />
+              {filteredJobs.length === 0 ? (
+                <tr>
+                  <td colSpan="6" style={{ textAlign: 'center', padding: '2rem', color: isDark ? '#9ca3af' : '#6b7280' }}>
+                    No jobs yet. Click "New" to add your first job!
                   </td>
                 </tr>
-              ))}
+              ) : (
+                filteredJobs.map(job => (
+                  <tr key={job.id}>
+                    <td className="job-title">
+                      {job.url ? (
+                        <a href={job.url} target="_blank" rel="noreferrer" className="job-link">
+                          {job.title}
+                        </a>
+                      ) : (
+                        job.title
+                      )}
+                    </td>
+                    <td className="job-type">
+                      {job.type && <span className={`type-tag ${job.typeColor}`}>{job.type}</span>}
+                    </td>
+                    <td className="job-due-date">{job.dueDate}</td>
+                    <td className="job-actions">
+                      <button className="edit-btn" onClick={() => handleEditClick(job)}>Edit</button>
+                    </td>
+                    <td className="status-checkbox-cell">
+                      <input 
+                        type="checkbox" 
+                        checked={job.status === 'Interview' || job.status === 'Accepted'}
+                        onChange={(e) => handleStatusChange(job.id, 'Interview', e.target.checked)}
+                      />
+                    </td>
+                    <td className="status-checkbox-cell">
+                      <input 
+                        type="checkbox" 
+                        checked={job.status === 'Accepted'}
+                        onChange={(e) => handleStatusChange(job.id, 'Accepted', e.target.checked)}
+                      />
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
