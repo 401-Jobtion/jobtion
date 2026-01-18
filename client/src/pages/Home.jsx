@@ -171,65 +171,89 @@ function Home() {
 
   const toggleTheme = () => setIsDark(!isDark);
 
-  // Mood slider logic - track jobs applied today
-  // Mood slider logic - track jobs applied today
-  const jobsAppliedToday = jobs.filter(job => {
-    if (!job.createdAt) return false;
-    if (!job.createdAt) return false;
-    const today = new Date().toDateString();
-    return new Date(job.createdAt).toDateString() === today;
-    return new Date(job.createdAt).toDateString() === today;
-  }).length;
-
-  const getMoodData = (count) => {
-    let emoji = '☹️';
-    if (count >= 8) emoji = '😊';
-    else if (count >= 5) emoji = '😐';
-    
-    const position = Math.min((count / 8) * 100, 100);
-    return { emoji, position };
+  const handleCreateJob = (newJob) => {
+    setJobs(addJob(newJob));
   };
 
-  const { emoji, position } = getMoodData(jobsAppliedToday);
+  const handleUpdateJob = (updatedJob) => {
+    setJobs(updateJob(updatedJob));
+  };
 
+  const handleDeleteJob = (id) => {
+    setJobs(deleteJob(id));
+  };
+
+  const handleEditClick = (job) => {
+    setEditingJob(job);
+  };
+
+  const handleStatusChange = (jobId, newStatus, checked) => {
+    const job = jobs.find(j => j.id === jobId);
+    if (!job) return;
+
+    let updatedStatus;
+    if (newStatus === 'Accepted' && checked) {
+      updatedStatus = 'Accepted';
+    } else if (newStatus === 'Interview' && checked) {
+      updatedStatus = 'Interview';
+    } else if (newStatus === 'Interview' && !checked) {
+      updatedStatus = 'Applied';
+    } else if (newStatus === 'Accepted' && !checked) {
+      updatedStatus = 'Interview';
+    } else {
+      updatedStatus = 'Applied';
+    }
+
+    setJobs(updateJob({ ...job, status: updatedStatus }));
+  };
+
+  // Filter jobs by status tab
   const filteredJobs = jobs.filter(job => {
-    if (activeTab === 'Applied') return job.status === 'Applied';
-    if (activeTab === 'Interview') return job.status === 'Interview' || job.status === 'Accepted';
+    if (activeTab === 'Applied') return job.status === 'Applied' || !job.status;
+    if (activeTab === 'Interview') return job.status === 'Interview';
     if (activeTab === 'Accepted') return job.status === 'Accepted';
     return true;
   });
 
-  function handleCreateJob(newJob) {
-    setJobs(addJob(newJob));
-  }
+  // Calculate mood based on job statuses
+  const calculateMood = () => {
+    if (jobs.length === 0) return { emoji: '😊', position: 50 };
+    
+    const accepted = jobs.filter(j => j.status === 'Accepted').length;
+    const interviews = jobs.filter(j => j.status === 'Interview').length;
+    const applied = jobs.filter(j => j.status === 'Applied' || !j.status).length;
+    
+    // Calculate a score: accepted = 100pts, interview = 50pts, applied = 10pts
+    const score = (accepted * 100 + interviews * 50 + applied * 10) / jobs.length;
+    
+    // Map score to position (0-100)
+    const position = Math.min(100, Math.max(0, score));
+    
+    // Select emoji based on position
+    let emoji;
+    if (position >= 80) emoji = '🎉';
+    else if (position >= 60) emoji = '😄';
+    else if (position >= 40) emoji = '😊';
+    else if (position >= 20) emoji = '😐';
+    else emoji = '😰';
+    
+    return { emoji, position };
+  };
 
-  function handleUpdateJob(updatedJob) {
-    setJobs(updateJob(updatedJob));
-  }
-
-  function handleDeleteJob(id) {
-    setJobs(deleteJob(id));
-  }
-
-  function handleEditClick(job) {
-    setEditingJob(job);
-  }
-
-  function handleStatusChange(id, newStatus, isChecked) {
-    const updatedJobs = jobs.map(job => {
-      if (job.id === id) {
-        const updatedStatus = isChecked ? newStatus : 'Applied';
-        const updatedJob = { ...job, status: updatedStatus, updatedAt: new Date().toISOString() };
-        updateJob(updatedJob);
-        return updatedJob;
-      }
-      return job;
-    });
-    setJobs(updatedJobs);
-  }
+  const { emoji, position } = calculateMood();
 
   if (!isLoaded) {
-    return <div className="home-container">Loading...</div>;
+    return (
+      <div className={`home-container ${isDark ? 'dark' : 'light'}`}>
+        <PolygonBackground isDark={isDark} />
+        <main className="main-content">
+          <h1 className="page-title">Jobtion</h1>
+          <div style={{ textAlign: 'center', padding: '2rem', color: isDark ? '#9ca3af' : '#6b7280' }}>
+            Loading...
+          </div>
+        </main>
+      </div>
+    );
   }
 
   return (
@@ -286,7 +310,7 @@ function Home() {
                 <th className="job-title-header">Job Title</th>
                 <th className="type-header">Type</th>
                 <th className="due-date-header">Due Date</th>
-                <th className="checkbox-header"></th>
+                <th className="actions-header">Actions</th>
                 <th className="checkbox-header">Interview</th>
                 <th className="checkbox-header">Accepted</th>
               </tr>
@@ -339,7 +363,6 @@ function Home() {
         </div>
 
         {/* Mood Slider Section */}
-        {/* Mood Slider Section */}
         <div className="urgency-container">
           <div className="urgency-bar">
             <div 
@@ -352,19 +375,7 @@ function Home() {
         </div>
       </main>
 
-      <NewJobModal
-        open={showNewJob}
-        onClose={() => setShowNewJob(false)}
-        onCreate={handleCreateJob}
-      />
-
-      <EditJobModal
-        open={!!editingJob}
-        job={editingJob}
-        onClose={() => setEditingJob(null)}
-        onUpdate={handleUpdateJob}
-        onDelete={handleDeleteJob}
-      />
+      {/* Modals - Only one instance of each */}
       <NewJobModal
         open={showNewJob}
         onClose={() => setShowNewJob(false)}
