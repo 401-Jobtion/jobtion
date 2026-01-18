@@ -274,6 +274,51 @@ export default function ResumeEditorEnhanced() {
     }
   };
 
+  const exportToPDF = async () => {
+    const resumeElement = document.getElementById('resume-canvas');
+    if (!resumeElement) {
+      alert('Resume not found');
+      return;
+    }
+
+    // Prompt user for filename
+    const defaultName = profile.name ? `${profile.name}_Resume` : 'Resume';
+    const userFileName = prompt('Enter a name for your PDF:', defaultName);
+    
+    // If user cancels, don't export
+    if (userFileName === null) return;
+    
+    // Use provided name or fallback to default
+    const fileName = userFileName.trim() || defaultName;
+
+    try {
+      // Load html2pdf library if not already loaded
+      if (!window.html2pdf) {
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+        document.head.appendChild(script);
+        
+        await new Promise((resolve, reject) => {
+          script.onload = resolve;
+          script.onerror = reject;
+        });
+      }
+      
+      const opt = {
+        margin: 0,
+        filename: `${fileName}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+
+      await window.html2pdf().set(opt).from(resumeElement).save();
+    } catch (error) {
+      console.error('Error exporting PDF:', error);
+      alert('Failed to export PDF. Please try again.');
+    }
+  };
+
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: "#1e1e1e" }}>
       {/* Left Sidebar - Sections Library */}
@@ -415,7 +460,7 @@ export default function ResumeEditorEnhanced() {
         alignItems: "flex-start",
         overflowY: "auto"
       }}>
-        <div style={{
+        <div id="resume-canvas" style={{
           width: "794px",
           minHeight: "1123px",
           background: "white",
@@ -591,6 +636,29 @@ export default function ResumeEditorEnhanced() {
 
         {!rightCollapsed && (
           <>
+            {/* Export PDF Button */}
+            <button
+              onClick={exportToPDF}
+              style={{
+                width: "100%",
+                padding: "15px",
+                background: "#4CAF50",
+                color: "white",
+                border: "none",
+                borderRadius: "8px",
+                cursor: "pointer",
+                fontSize: "16px",
+                fontWeight: "600",
+                marginBottom: "20px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "10px"
+              }}
+            >
+              📄 Export to PDF
+            </button>
+
             <div style={{
               background: "#3a3a3a",
               padding: "20px",
