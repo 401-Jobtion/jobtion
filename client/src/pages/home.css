@@ -120,12 +120,16 @@
   overflow-y: auto;
   margin-top: 0.5rem;
   min-height: 0;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 .jobs-table {
   width: 100%;
   border-collapse: collapse;
-  table-layout: fixed;
+  table-layout: fixed; /* Ensures headers and body align */
 }
 
 .jobs-table thead {
