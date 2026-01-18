@@ -19,17 +19,35 @@ function Home() {
       setJobs(storedJobs);
     } else {
       setJobs([
-        { id: 'job-1', title: 'Google SWE', url: '', description: '', requirements: [], type: 'SWE', typeColor: 'red', dueDate: 'February 28, 2025', status: 'applied', company: 'Google', location: '', salary: '', notes: '', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-        { id: 'job-2', title: 'Data Analyst TD', url: '', description: '', requirements: [], type: 'Data', typeColor: 'green', dueDate: 'March 1, 2025', status: 'applied', company: 'TD Bank', location: '', salary: '', notes: '', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+        { id: 'job-1', title: 'Google SWE', url: '', description: '', requirements: [], type: 'SWE', typeColor: 'red', dueDate: 'February 28, 2025', status: 'Applied', company: 'Google', location: '', salary: '', notes: '', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+        { id: 'job-2', title: 'Data Analyst TD', url: '', description: '', requirements: [], type: 'Data', typeColor: 'green', dueDate: 'March 1, 2025', status: 'Applied', company: 'TD Bank', location: '', salary: '', notes: '', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
       ]);
     }
     setIsLoaded(true);
   }, []);
 
+  // Mood slider logic - track jobs applied today
+  const jobsAppliedToday = jobs.filter(job => {
+    if (!job.createdAt) return false;
+    const today = new Date().toDateString();
+    return new Date(job.createdAt).toDateString() === today;
+  }).length;
+
+  const getMoodData = (count) => {
+    let emoji = '☹️';
+    if (count >= 8) emoji = '😊';
+    else if (count >= 5) emoji = '😐';
+    
+    const position = Math.min((count / 8) * 100, 100);
+    return { emoji, position };
+  };
+
+  const { emoji, position } = getMoodData(jobsAppliedToday);
+
   const filteredJobs = jobs.filter(job => {
-    if (activeTab === 'Applied') return job.status === 'saved' || job.status === 'applied';
-    if (activeTab === 'Interview') return job.status === 'interviewing';
-    if (activeTab === 'Accepted') return job.status === 'offer';
+    if (activeTab === 'Applied') return job.status === 'Applied';
+    if (activeTab === 'Interview') return job.status === 'Interview' || job.status === 'Accepted';
+    if (activeTab === 'Accepted') return job.status === 'Accepted';
     return true;
   });
 
@@ -49,10 +67,22 @@ function Home() {
     setEditingJob(job);
   }
 
+  function handleStatusChange(id, newStatus, isChecked) {
+    const updatedJobs = jobs.map(job => {
+      if (job.id === id) {
+        const updatedStatus = isChecked ? newStatus : 'Applied';
+        const updatedJob = { ...job, status: updatedStatus, updatedAt: new Date().toISOString() };
+        updateJob(updatedJob); // Persist to storage
+        return updatedJob;
+      }
+      return job;
+    });
+    setJobs(updatedJobs);
+  }
+
   if (!isLoaded) {
     return <div className="home-container">Loading...</div>;
   }
-
 
   return (
     <div className="home-container">
@@ -61,38 +91,53 @@ function Home() {
 
         <div className="tabs-container">
           <div className="tabs">
-            {['Applied', 'Interview', 'Accepted'].map((tab) => (
-              <button
-                key={tab}
-                className={`tab ${activeTab === tab ? 'active' : ''}`}
-                onClick={() => setActiveTab(tab)}
-              >
-                <span className="tab-icon">
-                  {tab === 'Applied' && (
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                      <line x1="9" y1="3" x2="9" y2="21"></line>
-                    </svg>
-                  )}
-                  {tab === 'Interview' && (
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                      <circle cx="12" cy="7" r="4"></circle>
-                    </svg>
-                  )}
-                  {tab === 'Accepted' && (
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                      <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                    </svg>
-                  )}
-                </span>
-                {tab}
-              </button>
-            ))}
+            <button
+              className={`tab ${activeTab === 'Applied' ? 'active' : ''}`}
+              onClick={() => setActiveTab('Applied')}
+            >
+              <span className="tab-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="9" y1="3" x2="9" y2="21"></line>
+                </svg>
+              </span>
+              Applied
+            </button>
+
+            <button
+              className={`tab ${activeTab === 'Interview' ? 'active' : ''}`}
+              onClick={() => setActiveTab('Interview')}
+            >
+              <span className="tab-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+              </span>
+              Interview
+            </button>
+
+            <button
+              className={`tab ${activeTab === 'Accepted' ? 'active' : ''}`}
+              onClick={() => setActiveTab('Accepted')}
+            >
+              <span className="tab-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                  <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+              </span>
+              Accepted
+            </button>
           </div>
 
           <div className="actions">
+            <button className="icon-button">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+            </button>
             <button className="new-button" onClick={() => setShowNewJob(true)}>New</button>
             <button className="resume-button" onClick={() => navigate("/resume")}>Resume</button>
           </div>
@@ -114,8 +159,10 @@ function Home() {
               {filteredJobs.map(job => (
                 <tr key={job.id}>
                   <td className="job-title">
-                    {job.link ? (
-                      <a href={job.link} target="_blank" rel="noreferrer" className="job-link">{job.title}</a>
+                    {job.url ? (
+                      <a href={job.url} target="_blank" rel="noreferrer" className="job-link">
+                        {job.title}
+                      </a>
                     ) : (
                       job.title
                     )}
@@ -124,7 +171,9 @@ function Home() {
                     {job.type && <span className={`type-tag ${job.typeColor}`}>{job.type}</span>}
                   </td>
                   <td className="job-due-date">{job.dueDate}</td>
-                  
+                  <td className="job-actions">
+                    <button className="edit-btn" onClick={() => handleEditClick(job)}>Edit</button>
+                  </td>
                   <td className="status-checkbox-cell">
                     <input 
                       type="checkbox" 
@@ -132,7 +181,6 @@ function Home() {
                       onChange={(e) => handleStatusChange(job.id, 'Interview', e.target.checked)}
                     />
                   </td>
-
                   <td className="status-checkbox-cell">
                     <input 
                       type="checkbox" 
@@ -146,7 +194,7 @@ function Home() {
           </table>
         </div>
 
-        {/* New Mood Slider Section */}
+        {/* Mood Slider Section */}
         <div className="urgency-container">
           <div className="urgency-bar">
             <div 
@@ -157,12 +205,6 @@ function Home() {
             </div>
           </div>
         </div>
-
-        <NewJobModal
-          open={showNewJob}
-          onClose={() => setShowNewJob(false)}
-          onCreate={handleCreateJob}
-        />
       </main>
 
       <NewJobModal

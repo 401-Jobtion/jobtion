@@ -96,7 +96,7 @@ export default function NewJobModal({ open, onClose, onCreate }) {
       dueDate,
       type: jobType,
       typeColor: jobType === "SWE" ? "red" : jobType === "Data" ? "green" : "",
-      status: "saved",
+      status: "Applied",
       notes: "",
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
