@@ -90,6 +90,9 @@ export default function NewJobModal({ open, onClose, onCreate }) {
       setDescription(data.description || "");
       setRequirements(data.requirements?.join("\n") || "");
       setSalary(data.salary || "");
+      // Also set type and dueDate if returned by API
+      if (data.type) setJobType(data.type);
+      if (data.dueDate) setDueDate(data.dueDate);
     } catch (err) {
       setError(err.message || "Failed to extract job details");
     } finally {
