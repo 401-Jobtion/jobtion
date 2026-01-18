@@ -286,8 +286,7 @@ function Home() {
                 <th className="job-title-header">Job Title</th>
                 <th className="type-header">Type</th>
                 <th className="due-date-header">Due Date</th>
-                <th className="actions-header">Actions</th>
-                <th className="actions-header">Actions</th>
+                <th className="checkbox-header"></th>
                 <th className="checkbox-header">Interview</th>
                 <th className="checkbox-header">Accepted</th>
               </tr>
@@ -351,7 +350,6 @@ function Home() {
             </div>
           </div>
         </div>
-      </main>
       </main>
 
       <NewJobModal
