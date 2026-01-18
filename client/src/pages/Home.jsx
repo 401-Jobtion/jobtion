@@ -352,7 +352,6 @@ function Home() {
           </div>
         </div>
       </main>
-      </main>
 
       <NewJobModal
         open={showNewJob}
