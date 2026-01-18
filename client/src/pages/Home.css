@@ -7,11 +7,66 @@
   bottom: 0;
   width: 100vw;
   height: 100vh;
-  background-color: #ffffff;
-  color: #000000;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+/* Light theme (default) */
+.home-container.light {
+  background-color: #ffffff;
+  color: #000000;
+}
+
+/* Dark theme */
+.home-container.dark {
+  background-color: #111827;
+  color: #f3f4f6;
+}
+
+/* Theme Toggle Button */
+.theme-toggle {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  width: 60px;
+  height: 32px;
+  border-radius: 16px;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  transition: background 0.3s;
+  z-index: 1000;
+}
+
+.home-container.light .theme-toggle {
+  background: #e5e7eb;
+}
+
+.home-container.dark .theme-toggle {
+  background: #4b5563;
+}
+
+.toggle-slider {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  transition: transform 0.3s, background 0.3s;
+}
+
+.toggle-slider.light {
+  background: #f59e0b;
+  transform: translateX(0);
+}
+
+.toggle-slider.dark {
+  background: #fbbf24;
+  transform: translateX(28px);
 }
 
 .main-content {
@@ -22,14 +77,23 @@
   overflow: hidden;
   min-height: 0;
   position: relative;
+  z-index: 1;
 }
 
 .page-title {
   font-size: 3.5rem;
   font-weight: 400;
   margin: 0 0 1rem 0;
-  color: #000000;
   text-align: left;
+  transition: color 0.3s;
+}
+
+.home-container.light .page-title {
+  color: #000000;
+}
+
+.home-container.dark .page-title {
+  color: #f3f4f6;
 }
 
 /* Tabs */
@@ -43,7 +107,14 @@
 .tabs {
   display: flex;
   gap: 2rem;
+}
+
+.home-container.light .tabs {
   border-bottom: 2px solid #e0e0e0;
+}
+
+.home-container.dark .tabs {
+  border-bottom: 2px solid #374151;
 }
 
 .tab {
@@ -51,7 +122,6 @@
   border: none;
   padding: 1rem 0.5rem;
   font-size: 1rem;
-  color: #999;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -61,9 +131,22 @@
   transition: all 0.3s;
 }
 
-.tab.active {
+.home-container.light .tab {
+  color: #999;
+}
+
+.home-container.dark .tab {
+  color: #9ca3af;
+}
+
+.home-container.light .tab.active {
   color: #000000;
   border-bottom-color: #000000;
+}
+
+.home-container.dark .tab.active {
+  color: #f3f4f6;
+  border-bottom-color: #f3f4f6;
 }
 
 /* Actions */
@@ -74,100 +157,165 @@
 }
 
 .new-button {
-  background-color: #84cc16;
-  color: white;
-  border: none;
+  /* Coding Green Background */
+  background-color: #22c55e; 
+  color: #ffffff;
+  border: 2px solid #22c55e;
   padding: 0.5rem 1.5rem;
   font-size: 1rem;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
-  border-radius: 4px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.new-button:hover {
+  background-color: #16a34a;
+  border-color: #16a34a;
+  transform: translateY(-1px);
 }
 
 .resume-button {
-  background-color: #00bcd4;
-  color: white;
-  border: none;
+  /* Coding Green Text, White Background */
+  background-color: transparent;;
+  color: #22c55e;
+  border: 2px solid #22c55e;
   padding: 0.5rem 1.5rem;
   font-size: 1rem;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
-  border-radius: 4px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
 }
 
+.resume-button:hover {
+  background-color: #f0fdf4; /* Very light green hint */
+  color: #16a34a;
+  border-color: #16a34a;
+  transform: translateY(-1px);
+}
 /* Table Layout */
 .table-wrapper {
   flex: 1;
   overflow-y: auto;
   margin-top: 1rem;
   min-height: 0;
+}
 
-  &::-webkit-scrollbar {
-    display: none;
-  }
+.table-wrapper::-webkit-scrollbar {
+  display: none;
 }
 
 .jobs-table {
   width: 100%;
   border-collapse: collapse;
-  table-layout: fixed; /* Ensures headers and body align */
+  table-layout: fixed;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: background 0.3s;
+}
+
+.home-container.light .jobs-table {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+}
+
+.home-container.dark .jobs-table {
+  background: rgba(31, 41, 55, 0.5);
+  backdrop-filter: blur(10px);
 }
 
 .jobs-table thead {
   position: sticky;
   top: 0;
-  background-color: #ffffff;
   z-index: 5;
+}
+
+.home-container.light .jobs-table thead {
+  background-color: rgba(255, 255, 255, 0.95);
+}
+
+.home-container.dark .jobs-table thead {
+  background-color: rgba(31, 41, 55, 0.95);
 }
 
 .jobs-table th {
   padding: 1.5rem 1rem;
   font-weight: 500;
-  color: #999;
-  border-bottom: 2px solid #e0e0e0;
   font-size: 0.95rem;
-  text-align: left; /* Keep all text aligned left for the straight line look */
+  text-align: left;
+  transition: color 0.3s, border-color 0.3s;
 }
 
-/* Column Width Alignment Fixes */
-.job-title-header, .job-title { width: 30%; }
-.type-header, .job-type { width: 15%; }
-.due-date-header, .job-due-date { width: 25%; }
+.home-container.light .jobs-table th {
+  color: #999;
+  border-bottom: 2px solid #e0e0e0;
+}
 
-/* Checkbox Column Alignment - Set to left to match headers */
+.home-container.dark .jobs-table th {
+  color: #9ca3af;
+  border-bottom: 2px solid #374151;
+}
+
+/* Column Width Alignment */
+.job-title-header, .job-title { width: 30%; }
+.type-header, .job-type { width: 12%; }
+.due-date-header, .job-due-date { width: 20%; }
+.actions-header, .job-actions { width: 15%; }
 .checkbox-header, .status-checkbox-cell { 
-  width: 15%; 
+  width: 11.5%; 
   text-align: left; 
 }
 
 .jobs-table td {
   padding: 1.5rem 1rem;
   font-size: 1rem;
+  transition: color 0.3s, border-color 0.3s;
+}
+
+.home-container.light .jobs-table td {
   color: #000000;
   border-bottom: 1px solid #f0f0f0;
 }
 
-/* Custom Checkbox Styling: White background, Black outline */
+.home-container.dark .jobs-table td {
+  color: #f3f4f6;
+  border-bottom: 1px solid #374151;
+}
+
+/* Custom Checkbox Styling */
 .status-checkbox-cell input {
   -webkit-appearance: none;
   appearance: none;
   margin: 0;
   width: 20px;
   height: 20px;
-  border: 2px solid #000000; /* Black outline */
   border-radius: 4px;
-  background-color: #ffffff; /* White background */
   cursor: pointer;
   position: relative;
-  display: block; /* Helps with vertical alignment */
+  display: block;
+  transition: all 0.2s;
 }
 
-/* Style for when the checkbox is checked */
-.status-checkbox-cell input:checked {
-  background-color: #000000; /* Fills black when checked */
+.home-container.light .status-checkbox-cell input {
+  border: 2px solid #000000;
+  background-color: #ffffff;
 }
 
-/* Custom Checkmark (white dash/tick inside the black box) */
+.home-container.dark .status-checkbox-cell input {
+  border: 2px solid #f3f4f6;
+  background-color: transparent;
+}
+
+.home-container.light .status-checkbox-cell input:checked {
+  background-color: #000000;
+}
+
+.home-container.dark .status-checkbox-cell input:checked {
+  background-color: #f3f4f6;
+}
+
+/* Custom Checkmark */
 .status-checkbox-cell input:checked::after {
   content: '';
   position: absolute;
@@ -175,14 +323,29 @@
   top: 2px;
   width: 5px;
   height: 10px;
-  border: solid white;
   border-width: 0 2px 2px 0;
   transform: rotate(45deg);
 }
 
+.home-container.light .status-checkbox-cell input:checked::after {
+  border-color: white;
+}
+
+.home-container.dark .status-checkbox-cell input:checked::after {
+  border-color: #111827;
+}
+
 .job-link {
-  color: #000000;
   text-decoration: underline;
+  transition: color 0.3s;
+}
+
+.home-container.light .job-link {
+  color: #000000;
+}
+
+.home-container.dark .job-link {
+  color: #60a5fa;
 }
 
 .type-tag {
@@ -192,14 +355,31 @@
   font-weight: 500;
 }
 
-.type-tag.red { background-color: rgba(244, 67, 54, 0.15); color: #d32f2f; }
-.type-tag.green { background-color: rgba(76, 175, 80, 0.15); color: #388e3c; }
+.type-tag.red { 
+  background-color: rgba(244, 67, 54, 0.15); 
+  color: #d32f2f; 
+}
+
+.type-tag.green { 
+  background-color: rgba(76, 175, 80, 0.15); 
+  color: #388e3c; 
+}
+
+.home-container.dark .type-tag.red {
+  background-color: rgba(244, 67, 54, 0.25);
+  color: #ef5350;
+}
+
+.home-container.dark .type-tag.green {
+  background-color: rgba(76, 175, 80, 0.25);
+  color: #66bb6a;
+}
 
 /* Urgency Bar & Emoji Slider */
 .urgency-container {
   position: absolute;
   right: 25px;
-  top: 15rem; /* Made it shorter from the top */
+  top: 15rem;
   bottom: 3rem;
   width: 14px;
   display: flex;
@@ -213,6 +393,7 @@
   background: linear-gradient(to top, #dc2626 0%, #facc15 50%, #22c55e 100%);
   border-radius: 10px;
 }
+
 .actions-header {
   text-align: right;
   padding-right: 16px;
@@ -225,71 +406,29 @@
 
 .edit-btn {
   padding: 6px 14px;
-  background: #f3f4f6;
-  color: #374151;
   border: none;
   border-radius: 6px;
   font-size: 13px;
   cursor: pointer;
-  /* transition: background 0.15s; */
+  transition: background 0.15s;
 }
 
-.edit-btn:hover {
-  background: #e5e7eb;
-}
-
-.table-wrapper {
-  width: 100%;
-  overflow-x: auto;
-}
-
-.jobs-table {
-  width: 100%;
-  border-collapse: collapse;
-  table-layout: fixed;
-}
-
-.jobs-table th,
-.jobs-table td {
-  padding: 12px 16px;
-  text-align: left;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.job-title-header,
-.jobs-table td.job-title {
-  width: 40%;
-}
-
-.type-header,
-.jobs-table td.job-type {
-  width: 15%;
-}
-
-.due-date-header,
-.jobs-table td.job-due-date {
-  width: 25%;
-}
-
-.actions-header,
-.jobs-table td.job-actions {
-  width: 20%;
-  text-align: right;
-}
-
-.edit-btn {
-  padding: 6px 14px;
+.home-container.light .edit-btn {
   background: #f3f4f6;
   color: #374151;
-  border: none;
-  border-radius: 6px;
-  font-size: 13px;
-  cursor: pointer;
 }
 
-.edit-btn:hover {
+.home-container.dark .edit-btn {
+  background: #374151;
+  color: #e5e7eb;
+}
+
+.home-container.light .edit-btn:hover {
   background: #e5e7eb;
-  position: relative;
+}
+
+.home-container.dark .edit-btn:hover {
+  background: #4b5563;
 }
 
 .emoji-slider {

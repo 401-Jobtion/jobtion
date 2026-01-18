@@ -1,68 +1,159 @@
+/* ============================================
+   New Job Modal - Full Screen with Theme Support
+   ============================================ */
+
 .njm-fullscreen {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: #fff;
   z-index: 1000;
   display: flex;
   flex-direction: column;
+  transition: background-color 0.3s, color 0.3s;
 }
+
+/* Light theme (default) */
+.njm-fullscreen.light {
+  background: #ffffff;
+  color: #111827;
+}
+
+/* Dark theme */
+.njm-fullscreen.dark {
+  background: #111827;
+  color: #f3f4f6;
+}
+
+/* ============================================
+   Header
+   ============================================ */
 
 .njm-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 20px 32px;
+  position: relative;
+  z-index: 1;
+  transition: border-color 0.3s;
+}
+
+.njm-fullscreen.light .njm-header {
   border-bottom: 1px solid #e5e7eb;
+}
+
+.njm-fullscreen.dark .njm-header {
+  border-bottom: 1px solid rgba(75, 85, 99, 0.5);
 }
 
 .njm-header h1 {
   margin: 0;
-  font-size: 24px;
-  font-weight: 600;
-  color: #111;
+  font-size: 28px;
+  font-weight: 700;
+  transition: color 0.3s;
+}
+
+.njm-fullscreen.light .njm-header h1 {
+  color: #111827;
+}
+
+.njm-fullscreen.dark .njm-header h1 {
+  color: #f9fafb;
 }
 
 .njm-close {
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   border: none;
-  background: #f3f4f6;
-  border-radius: 8px;
+  border-radius: 10px;
   font-size: 20px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #666;
+  transition: all 0.2s;
 }
 
-.njm-close:hover {
-  background: #e5e7eb;
-  color: #111;
+.njm-fullscreen.light .njm-close {
+  background: #f3f4f6;
+  color: #6b7280;
 }
+
+.njm-fullscreen.light .njm-close:hover {
+  background: #e5e7eb;
+  color: #111827;
+}
+
+.njm-fullscreen.dark .njm-close {
+  background: rgba(75, 85, 99, 0.5);
+  color: #9ca3af;
+}
+
+.njm-fullscreen.dark .njm-close:hover {
+  background: rgba(75, 85, 99, 0.8);
+  color: #f3f4f6;
+}
+
+/* ============================================
+   Content
+   ============================================ */
 
 .njm-content {
   flex: 1;
   overflow-y: auto;
   padding: 32px;
+  position: relative;
+  z-index: 1;
 }
 
 .njm-form {
   max-width: 900px;
   margin: 0 auto;
+  padding: 24px;
+  border-radius: 16px;
+  transition: background 0.3s, border-color 0.3s;
 }
 
+.njm-fullscreen.light .njm-form {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  border: 1px solid #e5e7eb;
+}
+
+.njm-fullscreen.dark .njm-form {
+  background: rgba(31, 41, 55, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(75, 85, 99, 0.5);
+}
+
+/* ============================================
+   Error Message
+   ============================================ */
+
 .njm-error {
-  background: #fef2f2;
-  color: #dc2626;
   padding: 12px 16px;
   border-radius: 8px;
   font-size: 14px;
   margin-bottom: 24px;
 }
+
+.njm-fullscreen.light .njm-error {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+.njm-fullscreen.dark .njm-error {
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+/* ============================================
+   Form Sections
+   ============================================ */
 
 .njm-section {
   margin-bottom: 20px;
@@ -71,33 +162,79 @@
 .njm-label {
   display: block;
   font-size: 14px;
-  font-weight: 500;
-  color: #374151;
-  margin-bottom: 6px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  transition: color 0.3s;
 }
+
+.njm-fullscreen.light .njm-label {
+  color: #374151;
+}
+
+.njm-fullscreen.dark .njm-label {
+  color: #d1d5db;
+}
+
+/* ============================================
+   Input & Textarea
+   ============================================ */
 
 .njm-input,
 .njm-textarea {
   width: 100%;
-  padding: 10px 14px;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
+  padding: 12px 16px;
+  border-radius: 10px;
   font-size: 15px;
   box-sizing: border-box;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition: all 0.2s;
 }
 
-.njm-input:focus,
-.njm-textarea:focus {
+.njm-fullscreen.light .njm-input,
+.njm-fullscreen.light .njm-textarea {
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  color: #111827;
+}
+
+.njm-fullscreen.light .njm-input::placeholder,
+.njm-fullscreen.light .njm-textarea::placeholder {
+  color: #9ca3af;
+}
+
+.njm-fullscreen.light .njm-input:focus,
+.njm-fullscreen.light .njm-textarea:focus {
   outline: none;
-  border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.njm-fullscreen.dark .njm-input,
+.njm-fullscreen.dark .njm-textarea {
+  background: rgba(31, 41, 55, 0.8);
+  border: 1px solid rgba(75, 85, 99, 0.5);
+  color: #f3f4f6;
+}
+
+.njm-fullscreen.dark .njm-input::placeholder,
+.njm-fullscreen.dark .njm-textarea::placeholder {
+  color: #6b7280;
+}
+
+.njm-fullscreen.dark .njm-input:focus,
+.njm-fullscreen.dark .njm-textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
 }
 
 .njm-textarea {
   resize: vertical;
   min-height: 80px;
 }
+
+/* ============================================
+   URL Row
+   ============================================ */
 
 .njm-url-row {
   display: flex;
@@ -109,25 +246,33 @@
 }
 
 .njm-extract-btn {
-  padding: 10px 24px;
-  background: #2563eb;
+  padding: 12px 28px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   cursor: pointer;
   font-size: 15px;
-  font-weight: 500;
+  font-weight: 600;
   white-space: nowrap;
+  transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
 }
 
-.njm-extract-btn:hover {
-  background: #1d4ed8;
+.njm-extract-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
 }
 
 .njm-extract-btn:disabled {
-  background: #9ca3af;
+  background: #6b7280;
   cursor: not-allowed;
+  box-shadow: none;
 }
+
+/* ============================================
+   Grid Layout
+   ============================================ */
 
 .njm-grid {
   display: grid;
@@ -142,25 +287,42 @@
   }
 }
 
+/* ============================================
+   Type Tags
+   ============================================ */
+
 .njm-type-row {
   display: flex;
   gap: 10px;
 }
 
 .type-tag {
-  padding: 8px 20px;
-  border: 2px solid #e5e7eb;
-  border-radius: 6px;
-  background: #fff;
+  padding: 10px 24px;
+  border-radius: 8px;
   cursor: pointer;
   font-size: 14px;
-  font-weight: 500;
-  transition: all 0.15s;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.njm-fullscreen.light .type-tag {
+  background: #ffffff;
+  border: 2px solid #e5e7eb;
+}
+
+.njm-fullscreen.dark .type-tag {
+  background: rgba(31, 41, 55, 0.5);
+  border: 2px solid rgba(75, 85, 99, 0.5);
 }
 
 .type-tag.red {
   color: #dc2626;
   border-color: #fecaca;
+}
+
+.njm-fullscreen.dark .type-tag.red {
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.4);
 }
 
 .type-tag.red.selected {
@@ -174,11 +336,20 @@
   border-color: #bbf7d0;
 }
 
+.njm-fullscreen.dark .type-tag.green {
+  color: #4ade80;
+  border-color: rgba(34, 197, 94, 0.4);
+}
+
 .type-tag.green.selected {
   background: #16a34a;
   color: white;
   border-color: #16a34a;
 }
+
+/* ============================================
+   Actions
+   ============================================ */
 
 .njm-actions {
   display: flex;
@@ -186,35 +357,80 @@
   gap: 12px;
   margin-top: 32px;
   padding-top: 24px;
+  transition: border-color 0.3s;
+}
+
+.njm-fullscreen.light .njm-actions {
   border-top: 1px solid #e5e7eb;
 }
 
-.njm-cancel {
-  padding: 12px 24px;
-  background: #f3f4f6;
-  color: #374151;
-  border: none;
-  border-radius: 8px;
-  font-size: 15px;
-  font-weight: 500;
-  cursor: pointer;
+.njm-fullscreen.dark .njm-actions {
+  border-top: 1px solid rgba(75, 85, 99, 0.5);
 }
 
-.njm-cancel:hover {
+.njm-cancel {
+  padding: 12px 28px;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.njm-fullscreen.light .njm-cancel {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.njm-fullscreen.light .njm-cancel:hover {
   background: #e5e7eb;
 }
 
+.njm-fullscreen.dark .njm-cancel {
+  background: rgba(75, 85, 99, 0.5);
+  color: #f3f4f6;
+}
+
+.njm-fullscreen.dark .njm-cancel:hover {
+  background: rgba(75, 85, 99, 0.8);
+}
+
 .njm-primary {
-  padding: 12px 32px;
-  background: #16a34a;
+  padding: 12px 36px;
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   font-size: 15px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3);
 }
 
 .njm-primary:hover {
-  background: #15803d;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.4);
+}
+
+/* ============================================
+   Scrollbar (Dark Mode)
+   ============================================ */
+
+.njm-fullscreen.dark .njm-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.njm-fullscreen.dark .njm-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.njm-fullscreen.dark .njm-content::-webkit-scrollbar-thumb {
+  background: rgba(75, 85, 99, 0.5);
+  border-radius: 4px;
+}
+
+.njm-fullscreen.dark .njm-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(75, 85, 99, 0.8);
 }

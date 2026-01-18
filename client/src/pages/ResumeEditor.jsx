@@ -1,6 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
+import PolygonBackground from "../components/PolygonBackground";
+import "./resume-editor.css";
 
-// Enhanced Resume Editor Component
+// Enhanced Resume Editor Component with AI Features
 export default function ResumeEditorEnhanced() {
   const [profile, setProfile] = useState({
     name: "",
@@ -32,12 +34,133 @@ export default function ResumeEditorEnhanced() {
     return saved ? JSON.parse(saved) : [];
   });
 
-  // --- Saved Versions Logic ---
   const [savedVersions, setSavedVersions] = useState(() => {
     const saved = localStorage.getItem("resume_saved_versions");
     return saved ? JSON.parse(saved) : [];
   });
 
+  // --- Upload & AI State ---
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState(null);
+  const fileInputRef = useRef(null);
+  
+  const [jobUrl, setJobUrl] = useState("");
+  const [isOptimizing, setIsOptimizing] = useState(false);
+  const [optimizeError, setOptimizeError] = useState(null);
+  const [lastJobDetails, setLastJobDetails] = useState(null);
+
+  // --- UI State ---
+  const [leftCollapsed, setLeftCollapsed] = useState(false);
+  const [rightCollapsed, setRightCollapsed] = useState(false);
+  const [showProfileEdit, setShowProfileEdit] = useState(false);
+  const [editingExperience, setEditingExperience] = useState(null);
+  const [editingProject, setEditingProject] = useState(null);
+  const [editingEducation, setEditingEducation] = useState(null);
+  const [editingSkills, setEditingSkills] = useState(null);
+  const [draggedItem, setDraggedItem] = useState(null);
+  
+  // Theme state - synced with localStorage
+  const [isDark, setIsDark] = useState(() => {
+    const saved = localStorage.getItem('jobtion-theme');
+    return saved !== 'light';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('jobtion-theme', isDark ? 'dark' : 'light');
+  }, [isDark]);
+
+  // --- Upload Resume Handler ---
+  const handleUploadResume = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.name.toLowerCase().endsWith('.pdf')) {
+      setUploadError('Please upload a PDF file');
+      return;
+    }
+
+    setIsUploading(true);
+    setUploadError(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/parse-resume', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to parse resume');
+      }
+
+      const data = await response.json();
+
+      if (data.profile) setProfile(data.profile);
+      if (data.experiences?.length > 0) setExperiences(data.experiences);
+      if (data.projects?.length > 0) setProjects(data.projects);
+      if (data.education?.length > 0) setEducation(data.education);
+      if (data.skills?.categories?.length > 0) setSkills(data.skills);
+
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      setUploadError(error.message);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  // --- Optimize Resume Handler ---
+  const optimizeForJob = async () => {
+    if (!jobUrl.trim()) {
+      setOptimizeError("Please enter a job posting URL");
+      return;
+    }
+
+    if (experiences.length === 0 && projects.length === 0) {
+      setOptimizeError("Please add some content to your resume first");
+      return;
+    }
+
+    setIsOptimizing(true);
+    setOptimizeError(null);
+
+    try {
+      const response = await fetch('/api/tailor-resume', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          resume: { profile, experiences, projects, education, skills },
+          jobUrl: jobUrl.trim(),
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to optimize resume');
+      }
+
+      const data = await response.json();
+
+      if (data.optimized.experiences) setExperiences(data.optimized.experiences);
+      if (data.optimized.projects) setProjects(data.optimized.projects);
+      if (data.optimized.skills) setSkills(data.optimized.skills);
+
+      setLastJobDetails(data.job);
+    } catch (error) {
+      console.error('Optimize error:', error);
+      setOptimizeError(error.message);
+    } finally {
+      setIsOptimizing(false);
+    }
+  };
+
+  // --- Version Management ---
   const saveCurrentVersion = () => {
     const versionName = prompt("Enter a name for this version:", `Version ${savedVersions.length + 1}`);
     if (!versionName) return;
@@ -80,9 +203,8 @@ export default function ResumeEditorEnhanced() {
     if (hours < 24) return `${hours}h ago`;
     return new Date(timestamp).toLocaleDateString();
   };
-  // --- End Saved Versions Logic ---
 
-  // Save a block to Saved Info
+  // --- Saved Info Management ---
   const saveBlockToLibrary = (block, type) => {
     const newSavedInfo = { ...savedInfo };
     const blockWithId = { ...block, savedId: `saved-${Date.now()}` };
@@ -99,10 +221,8 @@ export default function ResumeEditorEnhanced() {
     localStorage.setItem("resume_saved_info", JSON.stringify(newSavedInfo));
   };
 
-  // Load a saved block to active resume
-  const loadBlockFromLibrary = (savedBlock, type) => {
-    // Create new instance with new ID
-    const newBlock = { ...savedBlock, id: `${type}-${Date.now()}` };
+  const loadBlockFromLibrary = (block, type) => {
+    const newBlock = { ...block, id: `${type}-${Date.now()}` };
     delete newBlock.savedId;
     
     if (type === 'experience') {
@@ -114,78 +234,38 @@ export default function ResumeEditorEnhanced() {
     }
   };
 
-  // Delete from saved library
   const deleteSavedBlock = (savedId, type) => {
     const newSavedInfo = { ...savedInfo };
-    
     if (type === 'experience') {
-      newSavedInfo.experiences = newSavedInfo.experiences.filter(e => e.savedId !== savedId);
+      newSavedInfo.experiences = newSavedInfo.experiences.filter(b => b.savedId !== savedId);
     } else if (type === 'project') {
-      newSavedInfo.projects = newSavedInfo.projects.filter(p => p.savedId !== savedId);
+      newSavedInfo.projects = newSavedInfo.projects.filter(b => b.savedId !== savedId);
     } else if (type === 'education') {
-      newSavedInfo.education = newSavedInfo.education.filter(e => e.savedId !== savedId);
+      newSavedInfo.education = newSavedInfo.education.filter(b => b.savedId !== savedId);
     }
-    
     setSavedInfo(newSavedInfo);
     localStorage.setItem("resume_saved_info", JSON.stringify(newSavedInfo));
   };
 
-  // Save current skills to library
-  const saveSkillSetToLibrary = () => {
-    if (skills.categories.length === 0) {
-      alert("No skills to save. Please add some skills first.");
-      return;
-    }
-    
-    const skillSetName = prompt("Enter a name for this skill set:", "Skills Set");
-    if (!skillSetName) return;
-
-    const newSkillSet = {
-      savedId: `skillset-${Date.now()}`,
-      name: skillSetName,
-      categories: skills.categories
-    };
-
-    const updatedSkillSets = [newSkillSet, ...savedSkillSets];
-    setSavedSkillSets(updatedSkillSets);
-    localStorage.setItem("resume_saved_skillsets", JSON.stringify(updatedSkillSets));
-  };
-
-  // Load saved skill set
   const loadSkillSetFromLibrary = (skillSet) => {
-    setSkills({
-      id: skills.id,
-      categories: skillSet.categories
-    });
+    setSkills({ ...skillSet, id: 'skills-1' });
   };
 
-  // Delete saved skill set
   const deleteSavedSkillSet = (savedId) => {
     const updated = savedSkillSets.filter(s => s.savedId !== savedId);
     setSavedSkillSets(updated);
     localStorage.setItem("resume_saved_skillsets", JSON.stringify(updated));
   };
 
-  const [draggedItem, setDraggedItem] = useState(null);
-  const [jobUrl, setJobUrl] = useState("");
-  const [isOptimizing, setIsOptimizing] = useState(false);
-  const [leftCollapsed, setLeftCollapsed] = useState(false);
-  const [rightCollapsed, setRightCollapsed] = useState(false);
-  const [showProfileEdit, setShowProfileEdit] = useState(false);
-  const [editingExperience, setEditingExperience] = useState(null);
-  const [editingProject, setEditingProject] = useState(null);
-  const [editingEducation, setEditingEducation] = useState(null);
-  const [editingSkills, setEditingSkills] = useState(null);
-
-  // Drag and Drop handlers
+  // --- Drag and Drop ---
   const handleDragStart = (e, item, type) => {
     setDraggedItem({ item, type });
-    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.effectAllowed = 'move';
   };
 
   const handleDragOver = (e) => {
     e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
+    e.dataTransfer.dropEffect = 'move';
   };
 
   const handleDrop = (e, targetIndex, type) => {
@@ -206,74 +286,44 @@ export default function ResumeEditorEnhanced() {
     setDraggedItem(null);
   };
 
-  // LLM Optimization (simulated)
-  const optimizeForJob = async () => {
-    if (!jobUrl) {
-      alert("Please enter a job posting URL");
-      return;
-    }
-
-    setIsOptimizing(true);
-    
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 2000));
-
-    // Simulate LLM optimization - in real implementation, this would call your backend
-    const optimizedExperiences = experiences.map(exp => ({
-      ...exp,
-      bullets: exp.bullets.map(bullet => 
-        bullet + " (optimized for job posting)"
-      )
-    }));
-
-    setExperiences(optimizedExperiences);
-    setIsOptimizing(false);
-    alert("Resume optimized! Check the updated bullet points.");
-  };
-
+  // --- CRUD Operations ---
   const addNewExperience = () => {
-    const newExp = {
+    setEditingExperience({
       id: `exp-${Date.now()}`,
       company: "",
       role: "",
       start: "",
       end: "",
       bullets: [""]
-    };
-    setEditingExperience(newExp);
+    });
   };
 
   const addNewProject = () => {
-    const newProj = {
+    setEditingProject({
       id: `proj-${Date.now()}`,
       name: "",
       tech: "",
       bullets: [""]
-    };
-    setEditingProject(newProj);
+    });
   };
 
   const addNewEducation = () => {
-    const newEdu = {
+    setEditingEducation({
       id: `edu-${Date.now()}`,
       school: "",
       degree: "",
       period: "",
       gpa: ""
-    };
-    setEditingEducation(newEdu);
+    });
   };
 
   const deleteItem = (id, type) => {
-    if (type === 'experience') {
-      setExperiences(experiences.filter(exp => exp.id !== id));
-    } else if (type === 'project') {
-      setProjects(projects.filter(proj => proj.id !== id));
-    } else if (type === 'education') {
-      setEducation(education.filter(edu => edu.id !== id));
-    }
+    if (type === 'experience') setExperiences(experiences.filter(exp => exp.id !== id));
+    else if (type === 'project') setProjects(projects.filter(proj => proj.id !== id));
+    else if (type === 'education') setEducation(education.filter(edu => edu.id !== id));
   };
 
+  // --- Export PDF ---
   const exportToPDF = async () => {
     const resumeElement = document.getElementById('resume-canvas');
     if (!resumeElement) {
@@ -281,38 +331,57 @@ export default function ResumeEditorEnhanced() {
       return;
     }
 
-    // Prompt user for filename
     const defaultName = profile.name ? `${profile.name}_Resume` : 'Resume';
     const userFileName = prompt('Enter a name for your PDF:', defaultName);
     
-    // If user cancels, don't export
     if (userFileName === null) return;
-    
-    // Use provided name or fallback to default
     const fileName = userFileName.trim() || defaultName;
 
     try {
-      // Load html2pdf library if not already loaded
       if (!window.html2pdf) {
         const script = document.createElement('script');
         script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
         document.head.appendChild(script);
-        
         await new Promise((resolve, reject) => {
           script.onload = resolve;
           script.onerror = reject;
         });
       }
+
+      const originalStyles = {
+        width: resumeElement.style.width,
+        minWidth: resumeElement.style.minWidth,
+        maxWidth: resumeElement.style.maxWidth,
+        padding: resumeElement.style.padding,
+        boxShadow: resumeElement.style.boxShadow
+      };
+
+      resumeElement.style.width = '210mm';
+      resumeElement.style.minWidth = '210mm';
+      resumeElement.style.maxWidth = '210mm';
+      resumeElement.style.padding = '10mm 12mm';
+      resumeElement.style.boxShadow = 'none';
       
       const opt = {
         margin: 0,
         filename: `${fileName}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        image: { type: 'jpeg', quality: 1 },
+        html2canvas: { 
+          scale: 2,
+          useCORS: true
+        },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
       };
 
       await window.html2pdf().set(opt).from(resumeElement).save();
+      
+      resumeElement.style.width = originalStyles.width;
+      resumeElement.style.minWidth = originalStyles.minWidth;
+      resumeElement.style.maxWidth = originalStyles.maxWidth;
+      resumeElement.style.padding = originalStyles.padding;
+      resumeElement.style.boxShadow = originalStyles.boxShadow;
+
     } catch (error) {
       console.error('Error exporting PDF:', error);
       alert('Failed to export PDF. Please try again.');
@@ -320,69 +389,79 @@ export default function ResumeEditorEnhanced() {
   };
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: "#1e1e1e" }}>
-      {/* Left Sidebar - Sections Library */}
-      <aside style={{
-        width: leftCollapsed ? "60px" : "280px",
-        background: "#2b2b2b",
-        color: "#eaeaea",
-        padding: "20px",
-        overflowY: "auto",
-        transition: "width 0.3s",
-        borderRight: "1px solid #3a3a3a"
-      }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-          {!leftCollapsed && <h2 style={{ margin: 0, fontSize: "18px" }}>Sections</h2>}
-          <button 
-            onClick={() => setLeftCollapsed(!leftCollapsed)}
-            style={{
-              background: "none",
-              border: "none",
-              color: "#aaa",
-              cursor: "pointer",
-              fontSize: "20px"
-            }}
-          >
+    <div className={`editor-wrapper ${isDark ? 'dark' : 'light'}`}>
+      {/* Animated Background */}
+      <PolygonBackground isDark={isDark} />
+
+      {/* Theme Toggle */}
+      <button 
+        className="theme-toggle" 
+        onClick={() => setIsDark(!isDark)}
+        style={{ right: rightCollapsed ? '80px' : '300px' }}
+      >
+        <div className={`toggle-slider ${isDark ? 'dark' : 'light'}`}>
+          {isDark ? '🌙' : '☀️'}
+        </div>
+      </button>
+
+      {/* Left Sidebar */}
+      <aside className={`left-sidebar ${leftCollapsed ? 'collapsed' : ''}`}>
+        <div className="sidebar-header">
+          {!leftCollapsed && <h2>Sections</h2>}
+          <button className="collapse-btn" onClick={() => setLeftCollapsed(!leftCollapsed)}>
             {leftCollapsed ? "→" : "←"}
           </button>
         </div>
 
         {!leftCollapsed && (
-          <>
-            <Section title="Profile">
+          <div className="sidebar-content">
+            {/* Upload Resume Button */}
+            <div className="sidebar-section">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf"
+                onChange={handleUploadResume}
+                style={{ display: 'none' }}
+                id="resume-upload"
+              />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploading}
+                className="upload-btn"
+              >
+                {isUploading ? (
+                  <>
+                    <span className="spinner" />
+                    Parsing...
+                  </>
+                ) : (
+                  <>📄 Upload Resume (PDF)</>
+                )}
+              </button>
+              {uploadError && (
+                <div className="error-message">{uploadError}</div>
+              )}
+            </div>
+
+            {/* Profile Section */}
+            <div className="sidebar-section">
+              <h3>Profile</h3>
               <button
                 onClick={() => setShowProfileEdit(true)}
-                style={{
-                  width: "100%",
-                  padding: "12px",
-                  background: "#4CAF50",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "6px",
-                  cursor: "pointer",
-                  fontSize: "14px",
-                  fontWeight: "500",
-                  marginBottom: "15px"
-                }}
+                className="action-btn primary"
               >
                 {profile.name ? "Edit Profile" : "Add Profile"}
               </button>
-              {profile.name && (
-                <div style={{
-                  background: "#3a3a3a",
-                  padding: "12px",
-                  borderRadius: "6px",
-                  fontSize: "13px"
-                }}>
-                  <div style={{ fontWeight: "500", marginBottom: "5px" }}>{profile.name}</div>
-                  <div style={{ color: "#aaa", fontSize: "12px" }}>{profile.email}</div>
-                  <div style={{ color: "#aaa", fontSize: "12px" }}>{profile.phone}</div>
-                </div>
-              )}
-            </Section>
+            </div>
 
-            <Section title="Experience" onAdd={addNewExperience}>
-              {experiences.map((exp, idx) => (
+            {/* Experience Section */}
+            <div className="sidebar-section">
+              <div className="section-header">
+                <h3>Experience</h3>
+                <button onClick={addNewExperience} className="add-version-btn">+</button>
+              </div>
+              {experiences.map((exp) => (
                 <DraggableItem
                   key={exp.id}
                   item={exp}
@@ -390,14 +469,19 @@ export default function ResumeEditorEnhanced() {
                   onDragStart={(e) => handleDragStart(e, exp, 'experience')}
                   onEdit={() => setEditingExperience(exp)}
                   onDelete={() => deleteItem(exp.id, 'experience')}
-                  onSave={() => saveBlockToLibrary(exp, 'experience')}  // ADD THIS LINE
+                  onSave={() => saveBlockToLibrary(exp, 'experience')}
                   title={exp.company || "Untitled"}
                   subtitle={exp.role || "No role"}
                 />
               ))}
-            </Section>
+            </div>
 
-            <Section title="Projects" onAdd={addNewProject}>
+            {/* Projects Section */}
+            <div className="sidebar-section">
+              <div className="section-header">
+                <h3>Projects</h3>
+                <button onClick={addNewProject} className="add-version-btn">+</button>
+              </div>
               {projects.map((proj) => (
                 <DraggableItem
                   key={proj.id}
@@ -406,14 +490,19 @@ export default function ResumeEditorEnhanced() {
                   onDragStart={(e) => handleDragStart(e, proj, 'project')}
                   onEdit={() => setEditingProject(proj)}
                   onDelete={() => deleteItem(proj.id, 'project')}
-                  onSave={() => saveBlockToLibrary(proj, 'project')}  // ADD THIS LINE
+                  onSave={() => saveBlockToLibrary(proj, 'project')}
                   title={proj.name || "Untitled"}
                   subtitle={proj.tech || "No tech"}
                 />
               ))}
-            </Section>
+            </div>
 
-            <Section title="Education" onAdd={addNewEducation}>
+            {/* Education Section */}
+            <div className="sidebar-section">
+              <div className="section-header">
+                <h3>Education</h3>
+                <button onClick={addNewEducation} className="add-version-btn">+</button>
+              </div>
               {education.map((edu) => (
                 <DraggableItem
                   key={edu.id}
@@ -422,589 +511,290 @@ export default function ResumeEditorEnhanced() {
                   onDragStart={(e) => handleDragStart(e, edu, 'education')}
                   onEdit={() => setEditingEducation(edu)}
                   onDelete={() => deleteItem(edu.id, 'education')}
-                  onSave={() => saveBlockToLibrary(edu, 'education')}  // ADD THIS LINE
+                  onSave={() => saveBlockToLibrary(edu, 'education')}
                   title={edu.school || "Untitled"}
                   subtitle={edu.degree || "No degree"}
                 />
               ))}
-            </Section>
+            </div>
 
-            <Section title="Skills">
+            {/* Skills Section */}
+            <div className="sidebar-section">
+              <h3>Skills</h3>
               <button
                 onClick={() => setEditingSkills(skills)}
-                style={{
-                  width: "100%",
-                  padding: "12px",
-                  background: "#4CAF50",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "6px",
-                  cursor: "pointer",
-                  fontSize: "14px",
-                  fontWeight: "500"
-                }}
+                className="action-btn primary"
               >
                 {skills.categories.length > 0 ? "Edit Skills" : "Add Skills"}
               </button>
-            </Section>
-          </>
+            </div>
+          </div>
         )}
       </aside>
 
       {/* Main Canvas */}
-      <main style={{
-        flex: 1,
-        padding: "40px",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "flex-start",
-        overflowY: "auto"
-      }}>
-        <div id="resume-canvas" style={{
-          width: "794px",
-          minHeight: "1123px",
-          background: "white",
-          boxShadow: "0 0 20px rgba(0,0,0,0.3)",
-          padding: "40px 60px"
-        }}>
+      <main className="editor-main">
+        <div id="resume-canvas" className="resume-canvas">
           {/* Profile Header */}
           {profile.name && (
-            <div style={{ textAlign: "center", marginBottom: "30px" }}>
-              <h1 style={{ fontSize: "32px", margin: "0 0 10px 0", color: "#000" }}>
-                {profile.name}
-              </h1>
-              <div style={{ display: "flex", justifyContent: "center", gap: "20px", fontSize: "14px", color: "#555", flexWrap: "wrap" }}>
+            <div className="resume-profile">
+              <h1 className="profile-name">{profile.name}</h1>
+              <div className="profile-meta">
                 {profile.phone && <span>📞 {profile.phone}</span>}
                 {profile.email && <span>✉️ {profile.email}</span>}
                 {profile.linkedin && <span>🔗 {profile.linkedin}</span>}
                 {profile.website && <span>🌐 {profile.website}</span>}
               </div>
-              <hr style={{ margin: "20px 0", border: "none", borderTop: "2px solid #000" }} />
+              <hr />
             </div>
           )}
 
           {/* Experience Section */}
           {experiences.length > 0 && (
-            <ResumeSection title="EXPERIENCE">
+            <div className="resume-section">
+              <h2 className="resume-section-title">EXPERIENCE</h2>
               {experiences.map((exp, idx) => (
                 <div
                   key={exp.id}
+                  className="resume-item"
                   draggable
                   onDragStart={(e) => handleDragStart(e, exp, 'experience')}
                   onDragOver={handleDragOver}
                   onDrop={(e) => handleDrop(e, idx, 'experience')}
-                  style={{
-                    marginBottom: "20px",
-                    cursor: "move",
-                    padding: "10px",
-                    background: draggedItem?.item.id === exp.id ? "#f0f0f0" : "transparent",
-                    borderRadius: "4px"
-                  }}
                 >
-                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "5px" }}>
-                    <strong style={{ fontSize: "15px", color: "#000" }}>{exp.company}</strong>
-                    <span style={{ fontSize: "14px", color: "#666" }}>
-                      {exp.start} {exp.end && `– ${exp.end}`}
-                    </span>
+                  <div className="resume-item-header">
+                    <strong>{exp.company}</strong>
+                    <span>{exp.start} {exp.end && `– ${exp.end}`}</span>
                   </div>
-                  {exp.role && (
-                    <div style={{ fontSize: "14px", fontStyle: "italic", marginBottom: "8px", color: "#555" }}>
-                      {exp.role}
-                    </div>
-                  )}
-                  {exp.bullets.length > 0 && exp.bullets[0] && (
-                    <ul style={{ margin: 0, paddingLeft: "20px", fontSize: "13px", color: "#000" }}>
+                  {exp.role && <div className="resume-item-role">{exp.role}</div>}
+                  {exp.bullets?.length > 0 && (
+                    <ul>
                       {exp.bullets.filter(b => b).map((bullet, i) => (
-                        <li key={i} style={{ marginBottom: "4px", color: "#000" }}>{bullet}</li>
+                        <li key={i}>{bullet}</li>
                       ))}
                     </ul>
                   )}
                 </div>
               ))}
-            </ResumeSection>
+            </div>
           )}
 
           {/* Projects Section */}
           {projects.length > 0 && (
-            <ResumeSection title="PROJECTS">
+            <div className="resume-section">
+              <h2 className="resume-section-title">PROJECTS</h2>
               {projects.map((proj, idx) => (
                 <div
                   key={proj.id}
+                  className="resume-item"
                   draggable
                   onDragStart={(e) => handleDragStart(e, proj, 'project')}
                   onDragOver={handleDragOver}
                   onDrop={(e) => handleDrop(e, idx, 'project')}
-                  style={{
-                    marginBottom: "20px",
-                    cursor: "move",
-                    padding: "10px",
-                    background: draggedItem?.item.id === proj.id ? "#f0f0f0" : "transparent",
-                    borderRadius: "4px"
-                  }}
                 >
-                  <div style={{ marginBottom: "5px" }}>
-                    <strong style={{ fontSize: "15px", color:"#000" }}>{proj.name}</strong>
-                  {proj.tech && (
-                    <span style={{ fontSize: "13px", color: "#666", marginLeft: "10px" }}>
-                      | {proj.tech}
-                    </span>
+                  <div className="resume-item-header">
+                    <strong>{proj.name}</strong>
+                    {proj.tech && <span style={{ color: "#666" }}>{proj.tech}</span>}
+                  </div>
+                  {proj.bullets?.length > 0 && (
+                    <ul>
+                      {proj.bullets.filter(b => b).map((bullet, i) => (
+                        <li key={i}>{bullet}</li>
+                      ))}
+                    </ul>
                   )}
                 </div>
-                {proj.bullets.length > 0 && proj.bullets[0] && (
-                  <ul style={{ margin: 0, paddingLeft: "20px", fontSize: "13px", color:"#555" }}>
-                    {proj.bullets.filter(b => b).map((bullet, i) => (
-                      <li key={i} style={{ marginBottom: "4px" }}>{bullet}</li>
-                    ))}
-                  </ul>
-                )}
-                </div>
               ))}
-            </ResumeSection>
+            </div>
           )}
 
           {/* Education Section */}
           {education.length > 0 && (
-            <ResumeSection title="EDUCATION">
+            <div className="resume-section">
+              <h2 className="resume-section-title">EDUCATION</h2>
               {education.map((edu, idx) => (
                 <div
                   key={edu.id}
+                  className="resume-item"
                   draggable
                   onDragStart={(e) => handleDragStart(e, edu, 'education')}
                   onDragOver={handleDragOver}
                   onDrop={(e) => handleDrop(e, idx, 'education')}
-                  style={{
-                    marginBottom: "15px",
-                    cursor: "move",
-                    padding: "10px",
-                    background: draggedItem?.item.id === edu.id ? "#f0f0f0" : "transparent",
-                    borderRadius: "4px"
-                  }}
                 >
-                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <div className="resume-item-header">
                     <div>
-                      <strong style={{ fontSize: "15px", color: "#000" }}>{edu.school}</strong>
-                      <div style={{ fontSize: "14px", color: "#555" }}>{edu.degree}</div>
-                      {edu.gpa && <div style={{ fontSize: "13px", color: "#666" }}>GPA: {edu.gpa}</div>}
+                      <strong>{edu.school}</strong>
+                      <div style={{ fontSize: "13px", color: "#555" }}>{edu.degree}</div>
+                      {edu.gpa && <div style={{ fontSize: "12px", color: "#666" }}>GPA: {edu.gpa}</div>}
                     </div>
-                    <span style={{ fontSize: "14px", color: "#666" }}>{edu.period}</span>
+                    <span>{edu.period}</span>
                   </div>
                 </div>
               ))}
-            </ResumeSection>
+            </div>
           )}
 
           {/* Skills Section */}
           {skills.categories.length > 0 && (
-            <ResumeSection title="SKILLS">
+            <div className="resume-section">
+              <h2 className="resume-section-title">SKILLS</h2>
               {skills.categories.map((cat, idx) => (
                 cat.items.length > 0 && (
-                  <div key={idx} style={{ marginBottom: "8px", fontSize: "13px", color: "#000" }}>
-                    <strong style={{ color: "#000" }}>{cat.name}:</strong> {cat.items.join(", ")}
+                  <div key={idx} style={{ marginBottom: "8px", fontSize: "13px" }}>
+                    <strong>{cat.name}:</strong> {cat.items.join(", ")}
                   </div>
                 )
               ))}
-            </ResumeSection>
+            </div>
           )}
         </div>
       </main>
 
-      {/* Right Sidebar - AI Tools & Saved Versions */}
-      <aside style={{
-        width: rightCollapsed ? "60px" : "320px",
-        background: "#2b2b2b",
-        color: "#eaeaea",
-        padding: "20px",
-        overflowY: "auto",
-        transition: "width 0.3s",
-        borderLeft: "1px solid #3a3a3a"
-      }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-          <button 
-            onClick={() => setRightCollapsed(!rightCollapsed)}
-            style={{
-              background: "none",
-              border: "none",
-              color: "#aaa",
-              cursor: "pointer",
-              fontSize: "20px"
-            }}
-          >
+      {/* Right Sidebar */}
+      <aside className={`right-sidebar ${rightCollapsed ? 'collapsed' : ''}`}>
+        <div className="sidebar-header">
+          <button className="collapse-btn" onClick={() => setRightCollapsed(!rightCollapsed)}>
             {rightCollapsed ? "←" : "→"}
           </button>
-          {!rightCollapsed && <h2 style={{ margin: 0, fontSize: "18px" }}>AI Tools</h2>}
+          {!rightCollapsed && <h2>AI Tools</h2>}
         </div>
 
         {!rightCollapsed && (
-          <>
+          <div className="sidebar-content">
             {/* Export PDF Button */}
-            <button
-              onClick={exportToPDF}
-              style={{
-                width: "100%",
-                padding: "15px",
-                background: "#4CAF50",
-                color: "white",
-                border: "none",
-                borderRadius: "8px",
-                cursor: "pointer",
-                fontSize: "16px",
-                fontWeight: "600",
-                marginBottom: "20px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "10px"
-              }}
-            >
+            <button onClick={exportToPDF} className="action-btn export">
               📄 Export to PDF
             </button>
 
-            <div style={{
-              background: "#3a3a3a",
-              padding: "20px",
-              borderRadius: "8px",
-              marginBottom: "20px"
-            }}>
-              <h3 style={{ fontSize: "16px", marginTop: 0, marginBottom: "15px" }}>
-                🤖 Optimize for Job
-              </h3>
-              <p style={{ fontSize: "13px", color: "#bbb", marginBottom: "15px" }}>
-                Paste a job posting URL and AI will tailor your resume bullets to match the job requirements.
+            {/* AI Optimize Section */}
+            <div className="sidebar-section ai-section">
+              <h3>🤖 Optimize for Job</h3>
+              <p className="section-description">
+                Paste a job posting URL and AI will tailor your resume to match.
               </p>
               <input
                 type="text"
                 placeholder="https://example.com/job-posting"
                 value={jobUrl}
-                onChange={(e) => setJobUrl(e.target.value)}
-                style={{
-                  width: "100%",
-                  padding: "10px",
-                  marginBottom: "10px",
-                  background: "#2b2b2b",
-                  border: "1px solid #555",
-                  color: "#fff",
-                  borderRadius: "4px",
-                  boxSizing: "border-box"
+                onChange={(e) => {
+                  setJobUrl(e.target.value);
+                  setOptimizeError(null);
                 }}
+                className="input-field"
               />
               <button
                 onClick={optimizeForJob}
                 disabled={isOptimizing}
-                style={{
-                  width: "100%",
-                  padding: "12px",
-                  background: isOptimizing ? "#555" : "#4CAF50",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "4px",
-                  cursor: isOptimizing ? "not-allowed" : "pointer",
-                  fontSize: "14px",
-                  fontWeight: "600"
-                }}
+                className="upload-btn"
+                style={{ marginTop: '10px' }}
               >
-                {isOptimizing ? "Optimizing..." : "Optimize Resume"}
+                {isOptimizing ? (
+                  <>
+                    <span className="spinner" />
+                    Optimizing...
+                  </>
+                ) : (
+                  "✨ Optimize Resume"
+                )}
               </button>
+              
+              {optimizeError && (
+                <div className="error-message">{optimizeError}</div>
+              )}
+
+              {lastJobDetails && (
+                <div className="success-card">
+                  <div className="success-label">✓ Optimized for:</div>
+                  <div className="success-title">{lastJobDetails.title}</div>
+                  <div className="success-subtitle">{lastJobDetails.company}</div>
+                </div>
+              )}
             </div>
 
-            <div style={{
-              background: "#3a3a3a",
-              padding: "20px",
-              borderRadius: "8px",
-              marginBottom: "20px"
-            }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px" }}>
-                <h3 style={{ fontSize: "16px", margin: 0 }}>
-                  💾 Saved Versions
-                </h3>
-                <button 
-                  onClick={saveCurrentVersion}
-                  style={{
-                    background: "#4CAF50",
-                    border: "none",
-                    color: "white",
-                    padding: "4px 8px",
-                    borderRadius: "4px",
-                    cursor: "pointer",
-                    fontSize: "12px"
-                  }}
-                >
-                  Save New
-                </button>
+            {/* Saved Versions */}
+            <div className="sidebar-section">
+              <div className="version-header">
+                <h3>💾 Saved Versions</h3>
+                <button className="add-version-btn" onClick={saveCurrentVersion}>+</button>
               </div>
 
               {savedVersions.length === 0 ? (
-                <div style={{ textAlign: "center", color: "#888", fontSize: "13px", padding: "10px" }}>
-                  No saved versions yet.
-                </div>
+                <div className="empty-state">No saved versions yet.</div>
               ) : (
-                savedVersions.map(version => (
-                  <div 
-                    key={version.id}
-                    onClick={() => loadVersion(version)}
-                    style={{
-                      background: "#2b2b2b",
-                      padding: "15px",
-                      borderRadius: "6px",
-                      marginBottom: "10px",
-                      cursor: "pointer",
-                      border: "1px solid #555",
-                      position: "relative"
-                    }}
-                  >
-                    <div style={{ fontSize: "14px", fontWeight: "500", marginBottom: "5px", color: "#fff" }}>
-                      {version.name}
-                    </div>
-                    <div style={{ fontSize: "12px", color: "#999" }}>
-                      {getTimeAgo(version.timestamp)}
-                    </div>
-                    <button 
-                      onClick={(e) => deleteVersion(e, version.id)}
-                      style={{
-                        position: "absolute",
-                        right: "10px",
-                        top: "15px",
-                        background: "none",
-                        border: "none",
-                        color: "#f44336",
-                        cursor: "pointer",
-                        fontSize: "14px"
-                      }}
-                    >
-                      🗑️
-                    </button>
+                savedVersions.map((version) => (
+                  <div key={version.id} className="version-card" onClick={() => loadVersion(version)}>
+                    <span className="version-name">{version.name}</span>
+                    <span className="version-time">{getTimeAgo(version.timestamp)}</span>
+                    <button className="delete-version-btn" onClick={(e) => deleteVersion(e, version.id)}>✕</button>
                   </div>
                 ))
               )}
             </div>
 
-            {/* NEW: Saved Info Section */}
-            <div style={{
-              background: "#3a3a3a",
-              padding: "20px",
-              borderRadius: "8px"
-            }}>
-              <h3 style={{ fontSize: "16px", margin: "0 0 10px 0" }}>
-                📚 Saved Info
-              </h3>
-
-              {/* Experiences */}
+            {/* Saved Library */}
+            <div className="sidebar-section">
+              <h3>📚 Saved Library</h3>
+              
               {savedInfo.experiences.length > 0 && (
-                <div style={{ marginBottom: "20px" }}>
-                  <h4 style={{ fontSize: "13px", color: "#4CAF50", marginBottom: "10px", fontWeight: "600" }}>
-                    Experience
-                  </h4>
+                <div className="library-section">
+                  <h4>Experience</h4>
                   {savedInfo.experiences.map((block) => (
-                    <div
-                      key={block.savedId}
-                      onClick={() => loadBlockFromLibrary(block, 'experience')}
-                      style={{
-                        background: "#2b2b2b",
-                        padding: "12px",
-                        borderRadius: "6px",
-                        marginBottom: "8px",
-                        cursor: "pointer",
-                        border: "1px solid #555",
-                        position: "relative",
-                        transition: "all 0.2s"
-                      }}
-                      onMouseEnter={(e) => e.currentTarget.style.background = "#353535"}
-                      onMouseLeave={(e) => e.currentTarget.style.background = "#2b2b2b"}
-                    >
-                      <div style={{ fontSize: "13px", fontWeight: "500", marginBottom: "3px", color: "#fff", paddingRight: "25px" }}>
-                        {block.company || "Untitled"}
-                      </div>
-                      <div style={{ fontSize: "12px", color: "#aaa" }}>
-                        {block.role || "No role"}
-                      </div>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          deleteSavedBlock(block.savedId, 'experience');
-                        }}
-                        style={{
-                          position: "absolute",
-                          right: "10px",
-                          top: "12px",
-                          background: "none",
-                          border: "none",
-                          color: "#f44336",
-                          cursor: "pointer",
-                          fontSize: "14px"
-                        }}
-                      >
-                        🗑️
-                      </button>
+                    <div key={block.savedId} className="version-card" onClick={() => loadBlockFromLibrary(block, 'experience')}>
+                      <span className="version-name">{block.company || "Untitled"}</span>
+                      <span className="version-time">{block.role || "No role"}</span>
+                      <button className="delete-version-btn" onClick={(e) => { e.stopPropagation(); deleteSavedBlock(block.savedId, 'experience'); }}>🗑️</button>
                     </div>
                   ))}
                 </div>
               )}
 
-              {/* Projects */}
               {savedInfo.projects.length > 0 && (
-                <div style={{ marginBottom: "20px" }}>
-                  <h4 style={{ fontSize: "13px", color: "#4CAF50", marginBottom: "10px", fontWeight: "600" }}>
-                    Projects
-                  </h4>
+                <div className="library-section">
+                  <h4>Projects</h4>
                   {savedInfo.projects.map((block) => (
-                    <div
-                      key={block.savedId}
-                      onClick={() => loadBlockFromLibrary(block, 'project')}
-                      style={{
-                        background: "#2b2b2b",
-                        padding: "12px",
-                        borderRadius: "6px",
-                        marginBottom: "8px",
-                        cursor: "pointer",
-                        border: "1px solid #555",
-                        position: "relative",
-                        transition: "all 0.2s"
-                      }}
-                      onMouseEnter={(e) => e.currentTarget.style.background = "#353535"}
-                      onMouseLeave={(e) => e.currentTarget.style.background = "#2b2b2b"}
-                    >
-                      <div style={{ fontSize: "13px", fontWeight: "500", marginBottom: "3px", color: "#fff", paddingRight: "25px" }}>
-                        {block.name || "Untitled"}
-                      </div>
-                      <div style={{ fontSize: "12px", color: "#aaa" }}>
-                        {block.tech || "No tech"}
-                      </div>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          deleteSavedBlock(block.savedId, 'project');
-                        }}
-                        style={{
-                          position: "absolute",
-                          right: "10px",
-                          top: "12px",
-                          background: "none",
-                          border: "none",
-                          color: "#f44336",
-                          cursor: "pointer",
-                          fontSize: "14px"
-                        }}
-                      >
-                        🗑️
-                      </button>
+                    <div key={block.savedId} className="version-card" onClick={() => loadBlockFromLibrary(block, 'project')}>
+                      <span className="version-name">{block.name || "Untitled"}</span>
+                      <span className="version-time">{block.tech || "No tech"}</span>
+                      <button className="delete-version-btn" onClick={(e) => { e.stopPropagation(); deleteSavedBlock(block.savedId, 'project'); }}>🗑️</button>
                     </div>
                   ))}
                 </div>
               )}
 
-              {/* Education */}
               {savedInfo.education.length > 0 && (
-                <div style={{ marginBottom: "20px" }}>
-                  <h4 style={{ fontSize: "13px", color: "#4CAF50", marginBottom: "10px", fontWeight: "600" }}>
-                    Education
-                  </h4>
+                <div className="library-section">
+                  <h4>Education</h4>
                   {savedInfo.education.map((block) => (
-                    <div
-                      key={block.savedId}
-                      onClick={() => loadBlockFromLibrary(block, 'education')}
-                      style={{
-                        background: "#2b2b2b",
-                        padding: "12px",
-                        borderRadius: "6px",
-                        marginBottom: "8px",
-                        cursor: "pointer",
-                        border: "1px solid #555",
-                        position: "relative",
-                        transition: "all 0.2s"
-                      }}
-                      onMouseEnter={(e) => e.currentTarget.style.background = "#353535"}
-                      onMouseLeave={(e) => e.currentTarget.style.background = "#2b2b2b"}
-                    >
-                      <div style={{ fontSize: "13px", fontWeight: "500", marginBottom: "3px", color: "#fff", paddingRight: "25px" }}>
-                        {block.school || "Untitled"}
-                      </div>
-                      <div style={{ fontSize: "12px", color: "#aaa" }}>
-                        {block.degree || "No degree"}
-                      </div>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          deleteSavedBlock(block.savedId, 'education');
-                        }}
-                        style={{
-                          position: "absolute",
-                          right: "10px",
-                          top: "12px",
-                          background: "none",
-                          border: "none",
-                          color: "#f44336",
-                          cursor: "pointer",
-                          fontSize: "14px"
-                        }}
-                      >
-                        🗑️
-                      </button>
+                    <div key={block.savedId} className="version-card" onClick={() => loadBlockFromLibrary(block, 'education')}>
+                      <span className="version-name">{block.school || "Untitled"}</span>
+                      <span className="version-time">{block.degree || "No degree"}</span>
+                      <button className="delete-version-btn" onClick={(e) => { e.stopPropagation(); deleteSavedBlock(block.savedId, 'education'); }}>🗑️</button>
                     </div>
                   ))}
                 </div>
               )}
 
-              {/* Skills */}
               {savedSkillSets.length > 0 && (
-                <div style={{ marginBottom: "20px" }}>
-                  <h4 style={{ fontSize: "13px", color: "#4CAF50", marginBottom: "10px", fontWeight: "600" }}>
-                    Skills
-                  </h4>
+                <div className="library-section">
+                  <h4>Skills</h4>
                   {savedSkillSets.map((skillSet) => (
-                    <div
-                      key={skillSet.savedId}
-                      onClick={() => loadSkillSetFromLibrary(skillSet)}
-                      style={{
-                        background: "#2b2b2b",
-                        padding: "12px",
-                        borderRadius: "6px",
-                        marginBottom: "8px",
-                        cursor: "pointer",
-                        border: "1px solid #555",
-                        position: "relative",
-                        transition: "all 0.2s"
-                      }}
-                      onMouseEnter={(e) => e.currentTarget.style.background = "#353535"}
-                      onMouseLeave={(e) => e.currentTarget.style.background = "#2b2b2b"}
-                    >
-                      <div style={{ fontSize: "13px", fontWeight: "500", marginBottom: "3px", color: "#fff", paddingRight: "25px" }}>
-                        {skillSet.name}
-                      </div>
-                      <div style={{ fontSize: "12px", color: "#aaa" }}>
-                        {skillSet.categories.length} {skillSet.categories.length === 1 ? 'category' : 'categories'}
-                      </div>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          deleteSavedSkillSet(skillSet.savedId);
-                        }}
-                        style={{
-                          position: "absolute",
-                          right: "10px",
-                          top: "12px",
-                          background: "none",
-                          border: "none",
-                          color: "#f44336",
-                          cursor: "pointer",
-                          fontSize: "14px"
-                        }}
-                      >
-                        🗑️
-                      </button>
+                    <div key={skillSet.savedId} className="version-card" onClick={() => loadSkillSetFromLibrary(skillSet)}>
+                      <span className="version-name">{skillSet.name}</span>
+                      <span className="version-time">{skillSet.categories.length} categories</span>
+                      <button className="delete-version-btn" onClick={(e) => { e.stopPropagation(); deleteSavedSkillSet(skillSet.savedId); }}>🗑️</button>
                     </div>
                   ))}
                 </div>
               )}
 
               {savedInfo.experiences.length === 0 && 
-              savedInfo.projects.length === 0 && 
-              savedInfo.education.length === 0 && 
-              savedSkillSets.length === 0 && (
-                <div style={{ textAlign: "center", color: "#888", fontSize: "13px", padding: "10px" }}>
-                  No saved blocks yet.
-                </div>
+               savedInfo.projects.length === 0 && 
+               savedInfo.education.length === 0 && 
+               savedSkillSets.length === 0 && (
+                <div className="empty-state">No saved blocks yet.</div>
               )}
             </div>
-          </>
+          </div>
         )}
       </aside>
 
@@ -1012,10 +802,7 @@ export default function ResumeEditorEnhanced() {
       {showProfileEdit && (
         <ProfileModal
           profile={profile}
-          onSave={(data) => {
-            setProfile(data);
-            setShowProfileEdit(false);
-          }}
+          onSave={(data) => { setProfile(data); setShowProfileEdit(false); }}
           onClose={() => setShowProfileEdit(false)}
         />
       )}
@@ -1025,11 +812,8 @@ export default function ResumeEditorEnhanced() {
           experience={editingExperience}
           onSave={(data) => {
             const exists = experiences.find(exp => exp.id === data.id);
-            if (exists) {
-              setExperiences(experiences.map(exp => exp.id === data.id ? data : exp));
-            } else {
-              setExperiences([...experiences, data]);
-            }
+            if (exists) setExperiences(experiences.map(exp => exp.id === data.id ? data : exp));
+            else setExperiences([...experiences, data]);
             setEditingExperience(null);
           }}
           onClose={() => setEditingExperience(null)}
@@ -1041,11 +825,8 @@ export default function ResumeEditorEnhanced() {
           project={editingProject}
           onSave={(data) => {
             const exists = projects.find(proj => proj.id === data.id);
-            if (exists) {
-              setProjects(projects.map(proj => proj.id === data.id ? data : proj));
-            } else {
-              setProjects([...projects, data]);
-            }
+            if (exists) setProjects(projects.map(proj => proj.id === data.id ? data : proj));
+            else setProjects([...projects, data]);
             setEditingProject(null);
           }}
           onClose={() => setEditingProject(null)}
@@ -1057,11 +838,8 @@ export default function ResumeEditorEnhanced() {
           education={editingEducation}
           onSave={(data) => {
             const exists = education.find(edu => edu.id === data.id);
-            if (exists) {
-              setEducation(education.map(edu => edu.id === data.id ? data : edu));
-            } else {
-              setEducation([...education, data]);
-            }
+            if (exists) setEducation(education.map(edu => edu.id === data.id ? data : edu));
+            else setEducation([...education, data]);
             setEditingEducation(null);
           }}
           onClose={() => setEditingEducation(null)}
@@ -1073,10 +851,7 @@ export default function ResumeEditorEnhanced() {
           skills={skills}
           savedSkillSets={savedSkillSets}
           setSavedSkillSets={setSavedSkillSets}
-          onSave={(data) => {
-            setSkills(data);
-            setEditingSkills(null);
-          }}
+          onSave={(data) => { setSkills(data); setEditingSkills(null); }}
           onClose={() => setEditingSkills(null)}
         />
       )}
@@ -1084,84 +859,77 @@ export default function ResumeEditorEnhanced() {
   );
 }
 
+// ============================================
 // Helper Components
-function Section({ title, children, onAdd }) {
+// ============================================
+
+function DraggableItem({ item, type, onDragStart, onEdit, onDelete, onSave, title, subtitle }) {
   return (
-    <div style={{ marginBottom: "25px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-        <h3 style={{ margin: 0, fontSize: "14px", fontWeight: "600", color: "#e0e0e0" }}>
-          {title}
-        </h3>
-        {onAdd && (
-          <button
-            onClick={onAdd}
-            style={{
-              background: "#4CAF50",
-              color: "white",
-              border: "none",
-              borderRadius: "4px",
-              padding: "4px 10px",
-              cursor: "pointer",
-              fontSize: "18px",
-              lineHeight: "1"
-            }}
-          >
-            +
-          </button>
-        )}
+    <div
+      draggable
+      onDragStart={onDragStart}
+      className="draggable-item"
+    >
+      <div className="drag-handle">⋮⋮</div>
+      <div className="item-text">
+        <span className="item-title">{title}</span>
+        <span className="item-subtitle">{subtitle}</span>
       </div>
-      {children}
+      <div className="item-actions">
+        <button onClick={onSave} className="save-btn" title="Save to Library">💾</button>
+        <button onClick={onEdit} className="edit-btn" title="Edit">✏️</button>
+        <button onClick={onDelete} className="delete-btn" title="Delete">🗑️</button>
+      </div>
     </div>
   );
 }
 
+// ============================================
 // Modal Components
+// ============================================
+
+function ModalBackdrop({ onClose, children }) {
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div onClick={(e) => e.stopPropagation()}>{children}</div>
+    </div>
+  );
+}
+
+function Input({ label, value, onChange, placeholder }) {
+  return (
+    <div className="input-group">
+      <label>{label}</label>
+      <input
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        className="modal-input"
+      />
+    </div>
+  );
+}
+
+function ModalActions({ onCancel, onSave }) {
+  return (
+    <div className="modal-actions">
+      <button onClick={onCancel} className="btn-cancel">Cancel</button>
+      <button onClick={onSave} className="btn-save">Save</button>
+    </div>
+  );
+}
+
 function ProfileModal({ profile, onSave, onClose }) {
   const [formData, setFormData] = useState(profile);
-
   return (
     <ModalBackdrop onClose={onClose}>
-      <div style={{
-        background: "#2b2b2b",
-        padding: "30px",
-        borderRadius: "12px",
-        width: "500px",
-        maxHeight: "80vh",
-        overflowY: "auto"
-      }}>
-        <h3 style={{ margin: "0 0 20px 0", color: "#fff" }}>Edit Profile</h3>
-        
-        <Input
-          label="Full Name"
-          value={formData.name}
-          onChange={(e) => setFormData({...formData, name: e.target.value})}
-          placeholder="John Doe"
-        />
-        <Input
-          label="Email"
-          value={formData.email}
-          onChange={(e) => setFormData({...formData, email: e.target.value})}
-          placeholder="john@example.com"
-        />
-        <Input
-          label="Phone"
-          value={formData.phone}
-          onChange={(e) => setFormData({...formData, phone: e.target.value})}
-          placeholder="(555) 123-4567"
-        />
-        <Input
-          label="LinkedIn"
-          value={formData.linkedin}
-          onChange={(e) => setFormData({...formData, linkedin: e.target.value})}
-          placeholder="linkedin.com/in/johndoe"
-        />
-        <Input
-          label="Website"
-          value={formData.website}
-          onChange={(e) => setFormData({...formData, website: e.target.value})}
-          placeholder="johndoe.com"
-        />
-
+      <div className="modal" style={{ width: "400px" }}>
+        <h3>Edit Profile</h3>
+        <Input label="Full Name" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} placeholder="John Doe" />
+        <Input label="Email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} placeholder="john@example.com" />
+        <Input label="Phone" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} placeholder="(555) 123-4567" />
+        <Input label="LinkedIn" value={formData.linkedin} onChange={(e) => setFormData({...formData, linkedin: e.target.value})} placeholder="linkedin.com/in/johndoe" />
+        <Input label="Website" value={formData.website} onChange={(e) => setFormData({...formData, website: e.target.value})} placeholder="johndoe.com" />
         <ModalActions onCancel={onClose} onSave={() => onSave(formData)} />
       </div>
     </ModalBackdrop>
@@ -1177,106 +945,37 @@ function ExperienceModal({ experience, onSave, onClose }) {
     setFormData({...formData, bullets: newBullets});
   };
 
-  const addBullet = () => {
-    setFormData({...formData, bullets: [...formData.bullets, ""]});
-  };
-
-  const removeBullet = (index) => {
-    setFormData({...formData, bullets: formData.bullets.filter((_, i) => i !== index)});
-  };
-
   return (
     <ModalBackdrop onClose={onClose}>
-      <div style={{
-        background: "#2b2b2b",
-        padding: "30px",
-        borderRadius: "12px",
-        width: "600px",
-        maxHeight: "80vh",
-        overflowY: "auto"
-      }}>
-        <h3 style={{ margin: "0 0 20px 0", color: "#fff" }}>
-          {experience.company ? "Edit Experience" : "Add Experience"}
-        </h3>
-        
-        <Input
-          label="Company"
-          value={formData.company}
-          onChange={(e) => setFormData({...formData, company: e.target.value})}
-          placeholder="Google"
-        />
-        <Input
-          label="Role"
-          value={formData.role}
-          onChange={(e) => setFormData({...formData, role: e.target.value})}
-          placeholder="Software Engineer"
-        />
-        <div style={{ display: "flex", gap: "15px" }}>
-          <Input
-            label="Start Date"
-            value={formData.start}
-            onChange={(e) => setFormData({...formData, start: e.target.value})}
-            placeholder="Jan 2022"
-          />
-          <Input
-            label="End Date"
-            value={formData.end}
-            onChange={(e) => setFormData({...formData, end: e.target.value})}
-            placeholder="Present"
-          />
+      <div className="modal" style={{ width: "500px" }}>
+        <h3>{experience.company ? "Edit Experience" : "Add Experience"}</h3>
+        <Input label="Company" value={formData.company} onChange={(e) => setFormData({...formData, company: e.target.value})} placeholder="Google" />
+        <Input label="Role" value={formData.role} onChange={(e) => setFormData({...formData, role: e.target.value})} placeholder="Software Engineer" />
+        <div style={{ display: "flex", gap: "10px" }}>
+          <Input label="Start Date" value={formData.start} onChange={(e) => setFormData({...formData, start: e.target.value})} placeholder="Jan 2022" />
+          <Input label="End Date" value={formData.end} onChange={(e) => setFormData({...formData, end: e.target.value})} placeholder="Present" />
         </div>
-
-        <div style={{ marginBottom: "15px" }}>
-          <label style={{ display: "block", marginBottom: "8px", color: "#ccc", fontSize: "14px" }}>
-            Achievements
-          </label>
+        <div className="bullets-section">
+          <label>Achievements</label>
           {formData.bullets.map((bullet, i) => (
-            <div key={i} style={{ display: "flex", gap: "10px", marginBottom: "10px" }}>
-              <input
-                value={bullet}
-                onChange={(e) => updateBullet(i, e.target.value)}
+            <div key={i} className="bullet-row">
+              <input 
+                value={bullet} 
+                onChange={(e) => updateBullet(i, e.target.value)} 
                 placeholder={`Achievement ${i + 1}`}
-                style={{
-                  flex: 1,
-                  padding: "10px",
-                  background: "#1f1f1f",
-                  border: "1px solid #444",
-                  color: "#fff",
-                  borderRadius: "6px",
-                  fontSize: "14px"
-                }}
+                className="modal-input"
               />
-              <button
-                onClick={() => removeBullet(i)}
-                style={{
-                  background: "#f44336",
-                  color: "white",
-                  border: "none",
-                  padding: "0 15px",
-                  borderRadius: "6px",
-                  cursor: "pointer"
-                }}
-              >
-                −
-              </button>
+              <button 
+                onClick={() => setFormData({...formData, bullets: formData.bullets.filter((_, idx) => idx !== i)})}
+                className="btn-remove"
+              >−</button>
             </div>
           ))}
-          <button
-            onClick={addBullet}
-            style={{
-              background: "#4CAF50",
-              color: "white",
-              border: "none",
-              padding: "8px 16px",
-              borderRadius: "6px",
-              cursor: "pointer",
-              fontSize: "14px"
-            }}
-          >
-            + Add Achievement
-          </button>
+          <button 
+            onClick={() => setFormData({...formData, bullets: [...formData.bullets, ""]})}
+            className="btn-add"
+          >+ Add Achievement</button>
         </div>
-
         <ModalActions onCancel={onClose} onSave={() => onSave(formData)} />
       </div>
     </ModalBackdrop>
@@ -1292,92 +991,33 @@ function ProjectModal({ project, onSave, onClose }) {
     setFormData({...formData, bullets: newBullets});
   };
 
-  const addBullet = () => {
-    setFormData({...formData, bullets: [...formData.bullets, ""]});
-  };
-
-  const removeBullet = (index) => {
-    setFormData({...formData, bullets: formData.bullets.filter((_, i) => i !== index)});
-  };
-
   return (
     <ModalBackdrop onClose={onClose}>
-      <div style={{
-        background: "#2b2b2b",
-        padding: "30px",
-        borderRadius: "12px",
-        width: "600px",
-        maxHeight: "80vh",
-        overflowY: "auto"
-      }}>
-        <h3 style={{ margin: "0 0 20px 0", color: "#fff" }}>
-          {project.name ? "Edit Project" : "Add Project"}
-        </h3>
-        
-        <Input
-          label="Project Name"
-          value={formData.name}
-          onChange={(e) => setFormData({...formData, name: e.target.value})}
-          placeholder="AI Resume Builder"
-        />
-        <Input
-          label="Technologies"
-          value={formData.tech}
-          onChange={(e) => setFormData({...formData, tech: e.target.value})}
-          placeholder="React, Node.js, OpenAI"
-        />
-
-        <div style={{ marginBottom: "15px" }}>
-          <label style={{ display: "block", marginBottom: "8px", color: "#ccc", fontSize: "14px" }}>
-            Project Details
-          </label>
+      <div className="modal" style={{ width: "500px" }}>
+        <h3>{project.name ? "Edit Project" : "Add Project"}</h3>
+        <Input label="Project Name" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} placeholder="My Awesome Project" />
+        <Input label="Technologies" value={formData.tech} onChange={(e) => setFormData({...formData, tech: e.target.value})} placeholder="React, Node.js, PostgreSQL" />
+        <div className="bullets-section">
+          <label>Key Points</label>
           {formData.bullets.map((bullet, i) => (
-            <div key={i} style={{ display: "flex", gap: "10px", marginBottom: "10px" }}>
-              <input
-                value={bullet}
-                onChange={(e) => updateBullet(i, e.target.value)}
-                placeholder={`Detail ${i + 1}`}
-                style={{
-                  flex: 1,
-                  padding: "10px",
-                  background: "#1f1f1f",
-                  border: "1px solid #444",
-                  color: "#fff",
-                  borderRadius: "6px",
-                  fontSize: "14px"
-                }}
+            <div key={i} className="bullet-row">
+              <input 
+                value={bullet} 
+                onChange={(e) => updateBullet(i, e.target.value)} 
+                placeholder={`Point ${i + 1}`}
+                className="modal-input"
               />
-              <button
-                onClick={() => removeBullet(i)}
-                style={{
-                  background: "#f44336",
-                  color: "white",
-                  border: "none",
-                  padding: "0 15px",
-                  borderRadius: "6px",
-                  cursor: "pointer"
-                }}
-              >
-                −
-              </button>
+              <button 
+                onClick={() => setFormData({...formData, bullets: formData.bullets.filter((_, idx) => idx !== i)})}
+                className="btn-remove"
+              >−</button>
             </div>
           ))}
-          <button
-            onClick={addBullet}
-            style={{
-              background: "#4CAF50",
-              color: "white",
-              border: "none",
-              padding: "8px 16px",
-              borderRadius: "6px",
-              cursor: "pointer",
-              fontSize: "14px"
-            }}
-          >
-            + Add Detail
-          </button>
+          <button 
+            onClick={() => setFormData({...formData, bullets: [...formData.bullets, ""]})}
+            className="btn-add"
+          >+ Add Point</button>
         </div>
-
         <ModalActions onCancel={onClose} onSave={() => onSave(formData)} />
       </div>
     </ModalBackdrop>
@@ -1389,43 +1029,12 @@ function EducationModal({ education, onSave, onClose }) {
 
   return (
     <ModalBackdrop onClose={onClose}>
-      <div style={{
-        background: "#2b2b2b",
-        padding: "30px",
-        borderRadius: "12px",
-        width: "500px",
-        maxHeight: "80vh",
-        overflowY: "auto"
-      }}>
-        <h3 style={{ margin: "0 0 20px 0", color: "#fff" }}>
-          {education.school ? "Edit Education" : "Add Education"}
-        </h3>
-        
-        <Input
-          label="School"
-          value={formData.school}
-          onChange={(e) => setFormData({...formData, school: e.target.value})}
-          placeholder="University of Alberta"
-        />
-        <Input
-          label="Degree"
-          value={formData.degree}
-          onChange={(e) => setFormData({...formData, degree: e.target.value})}
-          placeholder="B.Sc. Computer Science"
-        />
-        <Input
-          label="Period"
-          value={formData.period}
-          onChange={(e) => setFormData({...formData, period: e.target.value})}
-          placeholder="2018 - 2022"
-        />
-        <Input
-          label="GPA (Optional)"
-          value={formData.gpa}
-          onChange={(e) => setFormData({...formData, gpa: e.target.value})}
-          placeholder="3.8/4.0"
-        />
-
+      <div className="modal" style={{ width: "450px" }}>
+        <h3>{education.school ? "Edit Education" : "Add Education"}</h3>
+        <Input label="School" value={formData.school} onChange={(e) => setFormData({...formData, school: e.target.value})} placeholder="MIT" />
+        <Input label="Degree" value={formData.degree} onChange={(e) => setFormData({...formData, degree: e.target.value})} placeholder="B.S. Computer Science" />
+        <Input label="Time Period" value={formData.period} onChange={(e) => setFormData({...formData, period: e.target.value})} placeholder="2018 - 2022" />
+        <Input label="GPA (optional)" value={formData.gpa} onChange={(e) => setFormData({...formData, gpa: e.target.value})} placeholder="3.8" />
         <ModalActions onCancel={onClose} onSave={() => onSave(formData)} />
       </div>
     </ModalBackdrop>
@@ -1435,17 +1044,21 @@ function EducationModal({ education, onSave, onClose }) {
 function SkillsModal({ skills, savedSkillSets, setSavedSkillSets, onSave, onClose }) {
   const [formData, setFormData] = useState(skills);
 
-  const updateCategory = (index, field, value) => {
-    const newCategories = [...formData.categories];
-    newCategories[index] = {...newCategories[index], [field]: value};
-    setFormData({...formData, categories: newCategories});
-  };
-
   const addCategory = () => {
     setFormData({
       ...formData,
       categories: [...formData.categories, { name: "", items: [] }]
     });
+  };
+
+  const updateCategory = (index, field, value) => {
+    const newCategories = [...formData.categories];
+    if (field === 'items') {
+      newCategories[index].items = value.split(',').map(s => s.trim()).filter(s => s);
+    } else {
+      newCategories[index][field] = value;
+    }
+    setFormData({ ...formData, categories: newCategories });
   };
 
   const removeCategory = (index) => {
@@ -1455,330 +1068,57 @@ function SkillsModal({ skills, savedSkillSets, setSavedSkillSets, onSave, onClos
     });
   };
 
+  const saveAsSkillSet = () => {
+    const name = prompt("Enter a name for this skill set:", `Skill Set ${savedSkillSets.length + 1}`);
+    if (!name) return;
+
+    const newSkillSet = {
+      ...formData,
+      savedId: `skillset-${Date.now()}`,
+      name: name
+    };
+
+    const updated = [...savedSkillSets, newSkillSet];
+    setSavedSkillSets(updated);
+    localStorage.setItem("resume_saved_skillsets", JSON.stringify(updated));
+  };
+
   return (
     <ModalBackdrop onClose={onClose}>
-      <div style={{
-        background: "#2b2b2b",
-        padding: "30px",
-        borderRadius: "12px",
-        width: "600px",
-        maxHeight: "80vh",
-        overflowY: "auto"
-      }}>
-        <h3 style={{ margin: "0 0 20px 0", color: "#fff" }}>Edit Skills</h3>
+      <div className="modal" style={{ width: "550px" }}>
+        <h3>Edit Skills</h3>
         
         {formData.categories.map((cat, i) => (
-          <div key={i} style={{ marginBottom: "20px", padding: "15px", background: "#1f1f1f", borderRadius: "8px" }}>
-            <div style={{ display: "flex", gap: "10px", marginBottom: "10px" }}>
+          <div key={i} className="skill-category">
+            <div className="skill-category-header">
               <input
                 value={cat.name}
                 onChange={(e) => updateCategory(i, 'name', e.target.value)}
-                placeholder="Category (e.g., Languages)"
-                style={{
-                  flex: 1,
-                  padding: "10px",
-                  background: "#2b2b2b",
-                  border: "1px solid #444",
-                  color: "#fff",
-                  borderRadius: "6px",
-                  fontSize: "14px"
-                }}
+                placeholder="Category name (e.g., Languages)"
+                className="modal-input"
+                style={{ flex: 1 }}
               />
-              <button
-                onClick={() => removeCategory(i)}
-                style={{
-                  background: "#f44336",
-                  color: "white",
-                  border: "none",
-                  padding: "0 15px",
-                  borderRadius: "6px",
-                  cursor: "pointer"
-                }}
-              >
-                🗑️
-              </button>
+              <button onClick={() => removeCategory(i)} className="btn-remove">✕</button>
             </div>
             <input
-              value={cat.items.join(", ")}
-              onChange={(e) => updateCategory(i, 'items', e.target.value.split(",").map(s => s.trim()))}
+              value={cat.items.join(', ')}
+              onChange={(e) => updateCategory(i, 'items', e.target.value)}
               placeholder="Skills (comma-separated)"
-              style={{
-                width: "100%",
-                padding: "10px",
-                background: "#2b2b2b",
-                border: "1px solid #444",
-                color: "#fff",
-                borderRadius: "6px",
-                fontSize: "14px",
-                boxSizing: "border-box"
-              }}
+              className="modal-input"
             />
           </div>
         ))}
 
-        <button
-          onClick={addCategory}
-          style={{
-            background: "#4CAF50",
-            color: "white",
-            border: "none",
-            padding: "10px 20px",
-            borderRadius: "6px",
-            cursor: "pointer",
-            fontSize: "14px",
-            marginBottom: "20px",
-            width: "100%"
-          }}
-        >
+        <button onClick={addCategory} className="btn-add" style={{ marginTop: '12px' }}>
           + Add Category
         </button>
 
-        <div style={{ display: "flex", gap: "10px", justifyContent: "space-between", alignItems: "center" }}>
-          <button
-            onClick={() => {
-              if (formData.categories.length === 0) {
-                alert("No skills to save. Please add some skills first.");
-                return;
-              }
-              
-              const skillSetName = prompt("Enter a name for this skill set:", "Skills Set");
-              if (!skillSetName) return;
-
-              const newSkillSet = {
-                savedId: `skillset-${Date.now()}`,
-                name: skillSetName,
-                categories: formData.categories
-              };
-
-              const updatedSkillSets = [newSkillSet, ...savedSkillSets];
-              setSavedSkillSets(updatedSkillSets);
-              localStorage.setItem("resume_saved_skillsets", JSON.stringify(updatedSkillSets));
-              
-              alert(`Skill set "${skillSetName}" saved!`);
-            }}
-            style={{
-              padding: "10px 20px",
-              background: "#4CAF50",
-              color: "white",
-              border: "none",
-              borderRadius: "6px",
-              cursor: "pointer",
-              fontSize: "14px",
-              fontWeight: "500"
-            }}
-          >
-            💾 Remember
-          </button>
-          
-          <div style={{ display: "flex", gap: "10px" }}>
-            <button
-              onClick={onClose}
-              style={{
-                padding: "10px 20px",
-                background: "#444",
-                color: "white",
-                border: "none",
-                borderRadius: "6px",
-                cursor: "pointer",
-                fontSize: "14px"
-              }}
-            >
-              Cancel
-            </button>
-            <button
-              onClick={() => onSave(formData)}
-              style={{
-                padding: "10px 20px",
-                background: "#4CAF50",
-                color: "white",
-                border: "none",
-                borderRadius: "6px",
-                cursor: "pointer",
-                fontSize: "14px",
-                fontWeight: "500"
-              }}
-            >
-              Save
-            </button>
-          </div>
+        <div className="modal-actions">
+          <button onClick={saveAsSkillSet} className="btn-secondary">Save to Library</button>
+          <button onClick={onClose} className="btn-cancel">Cancel</button>
+          <button onClick={() => onSave(formData)} className="btn-save">Save</button>
         </div>
       </div>
     </ModalBackdrop>
-  );
-}
-
-// Helper Components
-function ModalBackdrop({ onClose, children }) {
-  return (
-    <div
-      onClick={onClose}
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "rgba(0,0,0,0.7)",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        zIndex: 1000
-      }}
-    >
-      <div onClick={(e) => e.stopPropagation()}>
-        {children}
-      </div>
-    </div>
-  );
-}
-
-function Input({ label, value, onChange, placeholder }) {
-  return (
-    <div style={{ marginBottom: "15px" }}>
-      <label style={{ display: "block", marginBottom: "8px", color: "#ccc", fontSize: "14px" }}>
-        {label}
-      </label>
-      <input
-        value={value}
-        onChange={onChange}
-        placeholder={placeholder}
-        style={{
-          width: "100%",
-          padding: "10px",
-          background: "#1f1f1f",
-          border: "1px solid #444",
-          color: "#fff",
-          borderRadius: "6px",
-          fontSize: "14px",
-          boxSizing: "border-box"
-        }}
-      />
-    </div>
-  );
-}
-
-function ModalActions({ onCancel, onSave }) {
-  return (
-    <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
-      <button
-        onClick={onCancel}
-        style={{
-          padding: "10px 20px",
-          background: "#444",
-          color: "white",
-          border: "none",
-          borderRadius: "6px",
-          cursor: "pointer",
-          fontSize: "14px"
-        }}
-      >
-        Cancel
-      </button>
-      <button
-        onClick={onSave}
-        style={{
-          padding: "10px 20px",
-          background: "#4CAF50",
-          color: "white",
-          border: "none",
-          borderRadius: "6px",
-          cursor: "pointer",
-          fontSize: "14px",
-          fontWeight: "500"
-        }}
-      >
-        Save
-      </button>
-    </div>
-  );
-}
-
-function DraggableItem({ item, type, onDragStart, onEdit, onDelete, onSave, title, subtitle }) {
-  return (
-    <div
-      draggable
-      onDragStart={onDragStart}
-      style={{
-        background: "#3a3a3a",
-        padding: "12px",
-        borderRadius: "6px",
-        marginBottom: "8px",
-        cursor: "move",
-        border: "1px solid #555",
-        transition: "all 0.2s"
-      }}
-      onMouseEnter={(e) => e.currentTarget.style.background = "#454545"}
-      onMouseLeave={(e) => e.currentTarget.style.background = "#3a3a3a"}
-    >
-      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-        <span style={{ color: "#888", fontSize: "12px" }}>⋮⋮</span>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: "14px", fontWeight: "500", marginBottom: "3px" }}>
-            {title}
-          </div>
-          <div style={{ fontSize: "12px", color: "#aaa" }}>
-            {subtitle}
-          </div>
-        </div>
-        <button
-          onClick={onSave}
-          style={{
-            background: "none",
-            border: "none",
-            color: "#2196F3",
-            cursor: "pointer",
-            fontSize: "16px",
-            padding: "4px"
-          }}
-          title="Save to library"
-        >
-          💾
-        </button>
-        <button
-          onClick={onEdit}
-          style={{
-            background: "none",
-            border: "none",
-            color: "#4CAF50",
-            cursor: "pointer",
-            fontSize: "16px",
-            padding: "4px"
-          }}
-          title="Edit"
-        >
-          ✏️
-        </button>
-        <button
-          onClick={onDelete}
-          style={{
-            background: "none",
-            border: "none",
-            color: "#f44336",
-            cursor: "pointer",
-            fontSize: "16px",
-            padding: "4px"
-          }}
-          title="Delete"
-        >
-          🗑️
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function ResumeSection({ title, children }) {
-  return (
-    <div style={{ marginBottom: "25px" }}>
-      <h2 style={{
-        fontSize: "16px",
-        fontWeight: "700",
-        letterSpacing: "0.5px",
-        borderBottom: "2px solid #000",
-        paddingBottom: "4px",
-        marginBottom: "15px",
-        color: "#000"
-      }}>
-        {title}
-      </h2>
-      {children}
-    </div>
   );
 }
