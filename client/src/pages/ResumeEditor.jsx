@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 // Enhanced Resume Editor Component
 export default function ResumeEditorEnhanced() {
@@ -17,6 +17,154 @@ export default function ResumeEditorEnhanced() {
     id: "skills-1",
     categories: []
   });
+
+  const [savedInfo, setSavedInfo] = useState(() => {
+    const saved = localStorage.getItem("resume_saved_info");
+    return saved ? JSON.parse(saved) : {
+      experiences: [],
+      projects: [],
+      education: []
+    };
+  });
+
+  const [savedSkillSets, setSavedSkillSets] = useState(() => {
+    const saved = localStorage.getItem("resume_saved_skillsets");
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  // --- Saved Versions Logic ---
+  const [savedVersions, setSavedVersions] = useState(() => {
+    const saved = localStorage.getItem("resume_saved_versions");
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const saveCurrentVersion = () => {
+    const versionName = prompt("Enter a name for this version:", `Version ${savedVersions.length + 1}`);
+    if (!versionName) return;
+
+    const newVersion = {
+      id: Date.now(),
+      name: versionName,
+      timestamp: new Date().toISOString(),
+      data: { profile, experiences, projects, education, skills }
+    };
+
+    const updatedVersions = [newVersion, ...savedVersions];
+    setSavedVersions(updatedVersions);
+    localStorage.setItem("resume_saved_versions", JSON.stringify(updatedVersions));
+  };
+
+  const loadVersion = (version) => {
+    if (confirm(`Load "${version.name}"? Current unsaved changes will be lost.`)) {
+      setProfile(version.data.profile);
+      setExperiences(version.data.experiences);
+      setProjects(version.data.projects);
+      setEducation(version.data.education);
+      setSkills(version.data.skills);
+    }
+  };
+
+  const deleteVersion = (e, id) => {
+    e.stopPropagation();
+    const updated = savedVersions.filter(v => v.id !== id);
+    setSavedVersions(updated);
+    localStorage.setItem("resume_saved_versions", JSON.stringify(updated));
+  };
+
+  const getTimeAgo = (timestamp) => {
+    const diff = Date.now() - new Date(timestamp).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return "Just now";
+    if (mins < 60) return `${mins}m ago`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours}h ago`;
+    return new Date(timestamp).toLocaleDateString();
+  };
+  // --- End Saved Versions Logic ---
+
+  // Save a block to Saved Info
+  const saveBlockToLibrary = (block, type) => {
+    const newSavedInfo = { ...savedInfo };
+    const blockWithId = { ...block, savedId: `saved-${Date.now()}` };
+    
+    if (type === 'experience') {
+      newSavedInfo.experiences = [...newSavedInfo.experiences, blockWithId];
+    } else if (type === 'project') {
+      newSavedInfo.projects = [...newSavedInfo.projects, blockWithId];
+    } else if (type === 'education') {
+      newSavedInfo.education = [...newSavedInfo.education, blockWithId];
+    }
+    
+    setSavedInfo(newSavedInfo);
+    localStorage.setItem("resume_saved_info", JSON.stringify(newSavedInfo));
+  };
+
+  // Load a saved block to active resume
+  const loadBlockFromLibrary = (savedBlock, type) => {
+    // Create new instance with new ID
+    const newBlock = { ...savedBlock, id: `${type}-${Date.now()}` };
+    delete newBlock.savedId;
+    
+    if (type === 'experience') {
+      setExperiences([...experiences, newBlock]);
+    } else if (type === 'project') {
+      setProjects([...projects, newBlock]);
+    } else if (type === 'education') {
+      setEducation([...education, newBlock]);
+    }
+  };
+
+  // Delete from saved library
+  const deleteSavedBlock = (savedId, type) => {
+    const newSavedInfo = { ...savedInfo };
+    
+    if (type === 'experience') {
+      newSavedInfo.experiences = newSavedInfo.experiences.filter(e => e.savedId !== savedId);
+    } else if (type === 'project') {
+      newSavedInfo.projects = newSavedInfo.projects.filter(p => p.savedId !== savedId);
+    } else if (type === 'education') {
+      newSavedInfo.education = newSavedInfo.education.filter(e => e.savedId !== savedId);
+    }
+    
+    setSavedInfo(newSavedInfo);
+    localStorage.setItem("resume_saved_info", JSON.stringify(newSavedInfo));
+  };
+
+  // Save current skills to library
+  const saveSkillSetToLibrary = () => {
+    if (skills.categories.length === 0) {
+      alert("No skills to save. Please add some skills first.");
+      return;
+    }
+    
+    const skillSetName = prompt("Enter a name for this skill set:", "Skills Set");
+    if (!skillSetName) return;
+
+    const newSkillSet = {
+      savedId: `skillset-${Date.now()}`,
+      name: skillSetName,
+      categories: skills.categories
+    };
+
+    const updatedSkillSets = [newSkillSet, ...savedSkillSets];
+    setSavedSkillSets(updatedSkillSets);
+    localStorage.setItem("resume_saved_skillsets", JSON.stringify(updatedSkillSets));
+  };
+
+  // Load saved skill set
+  const loadSkillSetFromLibrary = (skillSet) => {
+    setSkills({
+      id: skills.id,
+      categories: skillSet.categories
+    });
+  };
+
+  // Delete saved skill set
+  const deleteSavedSkillSet = (savedId) => {
+    const updated = savedSkillSets.filter(s => s.savedId !== savedId);
+    setSavedSkillSets(updated);
+    localStorage.setItem("resume_saved_skillsets", JSON.stringify(updated));
+  };
 
   const [draggedItem, setDraggedItem] = useState(null);
   const [jobUrl, setJobUrl] = useState("");
@@ -126,6 +274,51 @@ export default function ResumeEditorEnhanced() {
     }
   };
 
+  const exportToPDF = async () => {
+    const resumeElement = document.getElementById('resume-canvas');
+    if (!resumeElement) {
+      alert('Resume not found');
+      return;
+    }
+
+    // Prompt user for filename
+    const defaultName = profile.name ? `${profile.name}_Resume` : 'Resume';
+    const userFileName = prompt('Enter a name for your PDF:', defaultName);
+    
+    // If user cancels, don't export
+    if (userFileName === null) return;
+    
+    // Use provided name or fallback to default
+    const fileName = userFileName.trim() || defaultName;
+
+    try {
+      // Load html2pdf library if not already loaded
+      if (!window.html2pdf) {
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+        document.head.appendChild(script);
+        
+        await new Promise((resolve, reject) => {
+          script.onload = resolve;
+          script.onerror = reject;
+        });
+      }
+      
+      const opt = {
+        margin: 0,
+        filename: `${fileName}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+
+      await window.html2pdf().set(opt).from(resumeElement).save();
+    } catch (error) {
+      console.error('Error exporting PDF:', error);
+      alert('Failed to export PDF. Please try again.');
+    }
+  };
+
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: "#1e1e1e" }}>
       {/* Left Sidebar - Sections Library */}
@@ -197,6 +390,7 @@ export default function ResumeEditorEnhanced() {
                   onDragStart={(e) => handleDragStart(e, exp, 'experience')}
                   onEdit={() => setEditingExperience(exp)}
                   onDelete={() => deleteItem(exp.id, 'experience')}
+                  onSave={() => saveBlockToLibrary(exp, 'experience')}  // ADD THIS LINE
                   title={exp.company || "Untitled"}
                   subtitle={exp.role || "No role"}
                 />
@@ -212,6 +406,7 @@ export default function ResumeEditorEnhanced() {
                   onDragStart={(e) => handleDragStart(e, proj, 'project')}
                   onEdit={() => setEditingProject(proj)}
                   onDelete={() => deleteItem(proj.id, 'project')}
+                  onSave={() => saveBlockToLibrary(proj, 'project')}  // ADD THIS LINE
                   title={proj.name || "Untitled"}
                   subtitle={proj.tech || "No tech"}
                 />
@@ -227,6 +422,7 @@ export default function ResumeEditorEnhanced() {
                   onDragStart={(e) => handleDragStart(e, edu, 'education')}
                   onEdit={() => setEditingEducation(edu)}
                   onDelete={() => deleteItem(edu.id, 'education')}
+                  onSave={() => saveBlockToLibrary(edu, 'education')}  // ADD THIS LINE
                   title={edu.school || "Untitled"}
                   subtitle={edu.degree || "No degree"}
                 />
@@ -264,7 +460,7 @@ export default function ResumeEditorEnhanced() {
         alignItems: "flex-start",
         overflowY: "auto"
       }}>
-        <div style={{
+        <div id="resume-canvas" style={{
           width: "794px",
           minHeight: "1123px",
           background: "white",
@@ -412,7 +608,7 @@ export default function ResumeEditorEnhanced() {
         </div>
       </main>
 
-      {/* Right Sidebar - AI Tools */}
+      {/* Right Sidebar - AI Tools & Saved Versions */}
       <aside style={{
         width: rightCollapsed ? "60px" : "320px",
         background: "#2b2b2b",
@@ -440,6 +636,29 @@ export default function ResumeEditorEnhanced() {
 
         {!rightCollapsed && (
           <>
+            {/* Export PDF Button */}
+            <button
+              onClick={exportToPDF}
+              style={{
+                width: "100%",
+                padding: "15px",
+                background: "#4CAF50",
+                color: "white",
+                border: "none",
+                borderRadius: "8px",
+                cursor: "pointer",
+                fontSize: "16px",
+                fontWeight: "600",
+                marginBottom: "20px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "10px"
+              }}
+            >
+              📄 Export to PDF
+            </button>
+
             <div style={{
               background: "#3a3a3a",
               padding: "20px",
@@ -490,40 +709,300 @@ export default function ResumeEditorEnhanced() {
             <div style={{
               background: "#3a3a3a",
               padding: "20px",
+              borderRadius: "8px",
+              marginBottom: "20px"
+            }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px" }}>
+                <h3 style={{ fontSize: "16px", margin: 0 }}>
+                  💾 Saved Versions
+                </h3>
+                <button 
+                  onClick={saveCurrentVersion}
+                  style={{
+                    background: "#4CAF50",
+                    border: "none",
+                    color: "white",
+                    padding: "4px 8px",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                    fontSize: "12px"
+                  }}
+                >
+                  Save New
+                </button>
+              </div>
+
+              {savedVersions.length === 0 ? (
+                <div style={{ textAlign: "center", color: "#888", fontSize: "13px", padding: "10px" }}>
+                  No saved versions yet.
+                </div>
+              ) : (
+                savedVersions.map(version => (
+                  <div 
+                    key={version.id}
+                    onClick={() => loadVersion(version)}
+                    style={{
+                      background: "#2b2b2b",
+                      padding: "15px",
+                      borderRadius: "6px",
+                      marginBottom: "10px",
+                      cursor: "pointer",
+                      border: "1px solid #555",
+                      position: "relative"
+                    }}
+                  >
+                    <div style={{ fontSize: "14px", fontWeight: "500", marginBottom: "5px", color: "#fff" }}>
+                      {version.name}
+                    </div>
+                    <div style={{ fontSize: "12px", color: "#999" }}>
+                      {getTimeAgo(version.timestamp)}
+                    </div>
+                    <button 
+                      onClick={(e) => deleteVersion(e, version.id)}
+                      style={{
+                        position: "absolute",
+                        right: "10px",
+                        top: "15px",
+                        background: "none",
+                        border: "none",
+                        color: "#f44336",
+                        cursor: "pointer",
+                        fontSize: "14px"
+                      }}
+                    >
+                      🗑️
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* NEW: Saved Info Section */}
+            <div style={{
+              background: "#3a3a3a",
+              padding: "20px",
               borderRadius: "8px"
             }}>
-              <h3 style={{ fontSize: "16px", marginTop: 0, marginBottom: "15px" }}>
-                💾 Saved Versions
+              <h3 style={{ fontSize: "16px", margin: "0 0 10px 0" }}>
+                📚 Saved Info
               </h3>
-              <div style={{
-                background: "#2b2b2b",
-                padding: "15px",
-                borderRadius: "6px",
-                marginBottom: "10px",
-                cursor: "pointer",
-                border: "1px solid #555"
-              }}>
-                <div style={{ fontSize: "14px", fontWeight: "500", marginBottom: "5px" }}>
-                  Google SWE - Optimized
+
+              {/* Experiences */}
+              {savedInfo.experiences.length > 0 && (
+                <div style={{ marginBottom: "20px" }}>
+                  <h4 style={{ fontSize: "13px", color: "#4CAF50", marginBottom: "10px", fontWeight: "600" }}>
+                    Experience
+                  </h4>
+                  {savedInfo.experiences.map((block) => (
+                    <div
+                      key={block.savedId}
+                      onClick={() => loadBlockFromLibrary(block, 'experience')}
+                      style={{
+                        background: "#2b2b2b",
+                        padding: "12px",
+                        borderRadius: "6px",
+                        marginBottom: "8px",
+                        cursor: "pointer",
+                        border: "1px solid #555",
+                        position: "relative",
+                        transition: "all 0.2s"
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = "#353535"}
+                      onMouseLeave={(e) => e.currentTarget.style.background = "#2b2b2b"}
+                    >
+                      <div style={{ fontSize: "13px", fontWeight: "500", marginBottom: "3px", color: "#fff", paddingRight: "25px" }}>
+                        {block.company || "Untitled"}
+                      </div>
+                      <div style={{ fontSize: "12px", color: "#aaa" }}>
+                        {block.role || "No role"}
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteSavedBlock(block.savedId, 'experience');
+                        }}
+                        style={{
+                          position: "absolute",
+                          right: "10px",
+                          top: "12px",
+                          background: "none",
+                          border: "none",
+                          color: "#f44336",
+                          cursor: "pointer",
+                          fontSize: "14px"
+                        }}
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  ))}
                 </div>
-                <div style={{ fontSize: "12px", color: "#999" }}>
-                  Saved 2 hours ago
+              )}
+
+              {/* Projects */}
+              {savedInfo.projects.length > 0 && (
+                <div style={{ marginBottom: "20px" }}>
+                  <h4 style={{ fontSize: "13px", color: "#4CAF50", marginBottom: "10px", fontWeight: "600" }}>
+                    Projects
+                  </h4>
+                  {savedInfo.projects.map((block) => (
+                    <div
+                      key={block.savedId}
+                      onClick={() => loadBlockFromLibrary(block, 'project')}
+                      style={{
+                        background: "#2b2b2b",
+                        padding: "12px",
+                        borderRadius: "6px",
+                        marginBottom: "8px",
+                        cursor: "pointer",
+                        border: "1px solid #555",
+                        position: "relative",
+                        transition: "all 0.2s"
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = "#353535"}
+                      onMouseLeave={(e) => e.currentTarget.style.background = "#2b2b2b"}
+                    >
+                      <div style={{ fontSize: "13px", fontWeight: "500", marginBottom: "3px", color: "#fff", paddingRight: "25px" }}>
+                        {block.name || "Untitled"}
+                      </div>
+                      <div style={{ fontSize: "12px", color: "#aaa" }}>
+                        {block.tech || "No tech"}
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteSavedBlock(block.savedId, 'project');
+                        }}
+                        style={{
+                          position: "absolute",
+                          right: "10px",
+                          top: "12px",
+                          background: "none",
+                          border: "none",
+                          color: "#f44336",
+                          cursor: "pointer",
+                          fontSize: "14px"
+                        }}
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  ))}
                 </div>
-              </div>
-              <div style={{
-                background: "#2b2b2b",
-                padding: "15px",
-                borderRadius: "6px",
-                cursor: "pointer",
-                border: "1px solid #555"
-              }}>
-                <div style={{ fontSize: "14px", fontWeight: "500", marginBottom: "5px" }}>
-                  Master Resume
+              )}
+
+              {/* Education */}
+              {savedInfo.education.length > 0 && (
+                <div style={{ marginBottom: "20px" }}>
+                  <h4 style={{ fontSize: "13px", color: "#4CAF50", marginBottom: "10px", fontWeight: "600" }}>
+                    Education
+                  </h4>
+                  {savedInfo.education.map((block) => (
+                    <div
+                      key={block.savedId}
+                      onClick={() => loadBlockFromLibrary(block, 'education')}
+                      style={{
+                        background: "#2b2b2b",
+                        padding: "12px",
+                        borderRadius: "6px",
+                        marginBottom: "8px",
+                        cursor: "pointer",
+                        border: "1px solid #555",
+                        position: "relative",
+                        transition: "all 0.2s"
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = "#353535"}
+                      onMouseLeave={(e) => e.currentTarget.style.background = "#2b2b2b"}
+                    >
+                      <div style={{ fontSize: "13px", fontWeight: "500", marginBottom: "3px", color: "#fff", paddingRight: "25px" }}>
+                        {block.school || "Untitled"}
+                      </div>
+                      <div style={{ fontSize: "12px", color: "#aaa" }}>
+                        {block.degree || "No degree"}
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteSavedBlock(block.savedId, 'education');
+                        }}
+                        style={{
+                          position: "absolute",
+                          right: "10px",
+                          top: "12px",
+                          background: "none",
+                          border: "none",
+                          color: "#f44336",
+                          cursor: "pointer",
+                          fontSize: "14px"
+                        }}
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  ))}
                 </div>
-                <div style={{ fontSize: "12px", color: "#999" }}>
-                  Last edited yesterday
+              )}
+
+              {/* Skills */}
+              {savedSkillSets.length > 0 && (
+                <div style={{ marginBottom: "20px" }}>
+                  <h4 style={{ fontSize: "13px", color: "#4CAF50", marginBottom: "10px", fontWeight: "600" }}>
+                    Skills
+                  </h4>
+                  {savedSkillSets.map((skillSet) => (
+                    <div
+                      key={skillSet.savedId}
+                      onClick={() => loadSkillSetFromLibrary(skillSet)}
+                      style={{
+                        background: "#2b2b2b",
+                        padding: "12px",
+                        borderRadius: "6px",
+                        marginBottom: "8px",
+                        cursor: "pointer",
+                        border: "1px solid #555",
+                        position: "relative",
+                        transition: "all 0.2s"
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = "#353535"}
+                      onMouseLeave={(e) => e.currentTarget.style.background = "#2b2b2b"}
+                    >
+                      <div style={{ fontSize: "13px", fontWeight: "500", marginBottom: "3px", color: "#fff", paddingRight: "25px" }}>
+                        {skillSet.name}
+                      </div>
+                      <div style={{ fontSize: "12px", color: "#aaa" }}>
+                        {skillSet.categories.length} {skillSet.categories.length === 1 ? 'category' : 'categories'}
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteSavedSkillSet(skillSet.savedId);
+                        }}
+                        style={{
+                          position: "absolute",
+                          right: "10px",
+                          top: "12px",
+                          background: "none",
+                          border: "none",
+                          color: "#f44336",
+                          cursor: "pointer",
+                          fontSize: "14px"
+                        }}
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  ))}
                 </div>
-              </div>
+              )}
+
+              {savedInfo.experiences.length === 0 && 
+              savedInfo.projects.length === 0 && 
+              savedInfo.education.length === 0 && 
+              savedSkillSets.length === 0 && (
+                <div style={{ textAlign: "center", color: "#888", fontSize: "13px", padding: "10px" }}>
+                  No saved blocks yet.
+                </div>
+              )}
             </div>
           </>
         )}
@@ -592,6 +1071,8 @@ export default function ResumeEditorEnhanced() {
       {editingSkills && (
         <SkillsModal
           skills={skills}
+          savedSkillSets={savedSkillSets}
+          setSavedSkillSets={setSavedSkillSets}
           onSave={(data) => {
             setSkills(data);
             setEditingSkills(null);
@@ -951,7 +1432,7 @@ function EducationModal({ education, onSave, onClose }) {
   );
 }
 
-function SkillsModal({ skills, onSave, onClose }) {
+function SkillsModal({ skills, savedSkillSets, setSavedSkillSets, onSave, onClose }) {
   const [formData, setFormData] = useState(skills);
 
   const updateCategory = (index, field, value) => {
@@ -1052,7 +1533,75 @@ function SkillsModal({ skills, onSave, onClose }) {
           + Add Category
         </button>
 
-        <ModalActions onCancel={onClose} onSave={() => onSave(formData)} />
+        <div style={{ display: "flex", gap: "10px", justifyContent: "space-between", alignItems: "center" }}>
+          <button
+            onClick={() => {
+              if (formData.categories.length === 0) {
+                alert("No skills to save. Please add some skills first.");
+                return;
+              }
+              
+              const skillSetName = prompt("Enter a name for this skill set:", "Skills Set");
+              if (!skillSetName) return;
+
+              const newSkillSet = {
+                savedId: `skillset-${Date.now()}`,
+                name: skillSetName,
+                categories: formData.categories
+              };
+
+              const updatedSkillSets = [newSkillSet, ...savedSkillSets];
+              setSavedSkillSets(updatedSkillSets);
+              localStorage.setItem("resume_saved_skillsets", JSON.stringify(updatedSkillSets));
+              
+              alert(`Skill set "${skillSetName}" saved!`);
+            }}
+            style={{
+              padding: "10px 20px",
+              background: "#4CAF50",
+              color: "white",
+              border: "none",
+              borderRadius: "6px",
+              cursor: "pointer",
+              fontSize: "14px",
+              fontWeight: "500"
+            }}
+          >
+            💾 Remember
+          </button>
+          
+          <div style={{ display: "flex", gap: "10px" }}>
+            <button
+              onClick={onClose}
+              style={{
+                padding: "10px 20px",
+                background: "#444",
+                color: "white",
+                border: "none",
+                borderRadius: "6px",
+                cursor: "pointer",
+                fontSize: "14px"
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => onSave(formData)}
+              style={{
+                padding: "10px 20px",
+                background: "#4CAF50",
+                color: "white",
+                border: "none",
+                borderRadius: "6px",
+                cursor: "pointer",
+                fontSize: "14px",
+                fontWeight: "500"
+              }}
+            >
+              Save
+            </button>
+          </div>
+        </div>
       </div>
     </ModalBackdrop>
   );
@@ -1141,7 +1690,7 @@ function ModalActions({ onCancel, onSave }) {
   );
 }
 
-function DraggableItem({ item, type, onDragStart, onEdit, onDelete, title, subtitle }) {
+function DraggableItem({ item, type, onDragStart, onEdit, onDelete, onSave, title, subtitle }) {
   return (
     <div
       draggable
@@ -1168,6 +1717,20 @@ function DraggableItem({ item, type, onDragStart, onEdit, onDelete, title, subti
             {subtitle}
           </div>
         </div>
+        <button
+          onClick={onSave}
+          style={{
+            background: "none",
+            border: "none",
+            color: "#2196F3",
+            cursor: "pointer",
+            fontSize: "16px",
+            padding: "4px"
+          }}
+          title="Save to library"
+        >
+          💾
+        </button>
         <button
           onClick={onEdit}
           style={{

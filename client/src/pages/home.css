@@ -1,0 +1,259 @@
+/* Reset and make container full screen */
+.home-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: #121212; /* Dark background */
+  color: #e0e0e0; /* Light text */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 1rem 4rem 2rem 4rem;
+  overflow: hidden;
+  min-height: 0;
+  position: relative;
+}
+
+.page-title {
+  font-size: 3rem;
+  font-weight: 600;
+  margin: 0 0 1rem 0;
+  color: #ffffff;
+  text-align: left;
+}
+
+/* Tabs */
+.tabs-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  
+}
+
+.tabs {
+  display: flex;
+  gap: 2rem;
+  border-bottom: none;
+}
+
+.tab {
+  background: none;
+  border: none;
+  padding: 0.75rem 0.5rem;
+  font-size: 0.9rem;
+  color: #666;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: all 0.3s;
+}
+
+.tab.active {
+  color: #ffffff;
+  border-bottom-color: #ffffff;
+}
+
+/* Actions */
+.actions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.new-button {
+  background-color: #39ff14; /* Neon Green Base */
+  color: #000000; /* Black text for readability on bright green */
+  border: none;
+  padding: 0.5rem 1.4rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 0 10px rgba(57, 255, 20, 0.4);
+  transition: all 0.2s ease;
+}
+
+.new-button:hover {
+  background-color: #32e312;
+  box-shadow: 0 0 20px rgba(57, 255, 20, 0.6);
+  transform: translateY(-2px);
+}
+
+.resume-button {
+  background-color: transparent;
+  color: #39ff14; 
+  border: 2px solid #39ff14;
+  padding: 0.4rem 1.3rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  border-radius: 6px;
+  text-transform: uppercase;
+  transition: all 0.2s ease;
+}
+
+.resume-button:hover {
+  background-color: rgba(57, 255, 20, 0.1);
+  box-shadow: inset 0 0 10px rgba(57, 255, 20, 0.2);
+  transform: translateY(-2px);
+}
+
+/* Table Layout */
+.table-wrapper {
+  flex: 1;
+  overflow-y: auto;
+  margin-top: 0.5rem;
+  min-height: 0;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.jobs-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed; /* Ensures headers and body align */
+}
+
+.jobs-table thead {
+  position: sticky;
+  top: 0;
+  background-color: #121212;
+  z-index: 5;
+}
+
+.jobs-table th {
+  padding: 0.75rem 1rem; /* Thinner padding */
+  font-weight: 600;
+  color: #94a3b8;
+  border-bottom: 1px solid #334155;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  text-align: left;
+}
+
+.jobs-table tbody tr {
+  transition: background-color 0.2s ease;
+}
+.jobs-table tbody tr:hover {
+  background-color: rgba(255, 255, 255, 0.04);
+}
+.jobs-table td {
+  padding: 0.75rem 1rem; /* Thinner padding */
+  font-size: 0.95rem;
+  color: #cccccc;
+  border-bottom: 1px solid #222; /* Very subtle row separator */
+}
+
+/* Column Width Alignment */
+.job-title-header, .job-title { width: 30%; }
+.type-header, .job-type { width: 15%; }
+.due-date-header, .job-due-date { width: 25%; }
+.checkbox-header, .status-checkbox-cell { width: 15%; text-align: left; }
+
+/* Custom Checkbox Styling: Dark Theme */
+.status-checkbox-cell input {
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid #555; /* Darker outline */
+  border-radius: 3px;
+  background-color: #1a1a1a; 
+  cursor: pointer;
+  position: relative;
+  display: block;
+}
+
+.status-checkbox-cell input:checked {
+  background-color: #ffffff; 
+  border-color: #ffffff;
+}
+
+.status-checkbox-cell input:checked::after {
+  content: '';
+  position: absolute;
+  left: 5px;
+  top: 1px;
+  width: 4px;
+  height: 8px;
+  border: solid #000000; /* Black tick on white background */
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.job-link {
+  color: #ffffff;
+  text-decoration: none;
+}
+.job-link:hover {
+  text-decoration: underline;
+}
+
+.type-tag {
+  padding: 0.2rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.type-tag.red { background-color: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+.type-tag.green { background-color: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); }
+.type-tag.yellow { background-color: rgba(250, 204, 21, 0.15); color: #fde047; border: 1px solid rgba(250, 204, 21, 0.3); }
+/* Urgency Bar & Emoji Slider */
+.urgency-container {
+  position: absolute;
+  right: 25px;
+  top: 13.5rem;
+  bottom: 3rem;
+  width: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.urgency-bar {
+  height: 100%;
+  width: 100%;
+  /* Using brighter hex codes for a "neon" glow effect in dark mode */
+  background: linear-gradient(
+    to top, 
+    #ff0033 0%,   /* Pure Vibrant Red */
+    #ffcc00 50%,  /* Pure Gold/Yellow */
+    #00ff66 100%  /* Neon Green */
+  );
+  border-radius: 10px;
+  position: relative;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.5); /* Depth */
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.emoji-slider {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 1.5rem; /* Slightly larger */
+  transition: bottom 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  z-index: 10;
+  filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.3));
+}
