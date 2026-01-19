@@ -3,15 +3,13 @@
   "version": "1.0.0",
   "description": "* MongoDB needs to be set up (server/.env)",
   "main": "index.js",
-{
   "scripts": {
     "start": "npm install && cd client && npm install && cd ../server && npm install && cd .. && npm run dev",
     "build": "cd client && npm install && npm run build",
     "server": "cd server && npm run dev",
     "client": "cd client && npm run dev",
     "dev": "concurrently \"npm run server\" \"npm run client\""
-  }
-},
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
