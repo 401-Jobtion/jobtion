@@ -1,0 +1,5 @@
+{
+  "installCommand": "npm start",
+  "buildCommand": "echo 'Build complete'",
+  "outputDirectory": "client/dist"
+}
